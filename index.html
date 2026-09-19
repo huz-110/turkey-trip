@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Turkey Family Trip</title>
+  <meta name="description" content="Our Turkey era, 4-15 Nov 2026: day-by-day plan, weather, Intel Corner, drive vs fly, luggage planner, money and packing.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23C8F560'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle'%3E%F0%9F%8E%88%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <button class="brand" data-tab="overview" aria-label="Go to overview">
+      <span class="mark" aria-hidden="true">🎈</span>
+      <span><b>turkey.trip</b><small>4-15 Nov 2026</small></span>
+    </button>
+    <nav id="nav" class="tabs" aria-label="Sections"></nav>
+    <div class="tools">
+      <button class="btn ghost" id="btnExport" title="Download all your data as JSON">Export</button>
+      <button class="btn ghost" id="btnImport" title="Load a previously exported JSON">Import</button>
+      <input type="file" id="fileImport" accept="application/json,.json" hidden>
+      <button class="btn ghost" id="btnPrint" title="Print the full itinerary">Print</button>
+      <button class="btn ghost danger" id="btnReset" title="Restore researched defaults">Reset</button>
+    </div>
+  </header>
+  <div id="journeybar" class="journeybar"></div>
+
+  <main id="view" class="wrap"></main>
+
+  <footer class="foot wrap">
+    <p>Researched 19 Sep 2026. Prices, ratings and schedules change, so re-check anything tagged Estimated, Traveller-reported or Needs confirmation before paying. Edits save in this browser; use Export to back them up. Photos and fonts load when online.</p>
+    <div id="credits"></div>
+  </footer>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="photos.js"></script>
+  <script src="weather.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
