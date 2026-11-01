@@ -680,5 +680,37 @@ const PHOTOS = {
   "by": "Freedom's Falcon",
   "lic": "CC BY-SA 3.0",
   "page": "https://commons.wikimedia.org/wiki/File:%C4%B0stiklal_Caddesi_102.JPG"
+ },
+ "legends": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/The_land_of_legends%2C_belek%2C_Antalya.jpg/960px-The_land_of_legends%2C_belek%2C_Antalya.jpg",
+  "big": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/The_land_of_legends%2C_belek%2C_Antalya.jpg/1280px-The_land_of_legends%2C_belek%2C_Antalya.jpg",
+  "title": "The land of legends, belek, Antalya.jpg",
+  "by": "Nightrider1000",
+  "lic": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:The_land_of_legends,_belek,_Antalya.jpg"
+ },
+ "pamukkale": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cd/Pamukkale_Travertines_-_2014.10_-_panoramio.jpg/960px-Pamukkale_Travertines_-_2014.10_-_panoramio.jpg",
+  "big": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cd/Pamukkale_Travertines_-_2014.10_-_panoramio.jpg/1280px-Pamukkale_Travertines_-_2014.10_-_panoramio.jpg",
+  "title": "Pamukkale Travertines - 2014.10 - panoramio.jpg",
+  "by": "rheins",
+  "lic": "CC BY 3.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Pamukkale_Travertines_-_2014.10_-_panoramio.jpg"
+ },
+ "ihlara": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Ihlara_Valley%2C_Turkey.jpg/960px-Ihlara_Valley%2C_Turkey.jpg",
+  "big": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Ihlara_Valley%2C_Turkey.jpg/1280px-Ihlara_Valley%2C_Turkey.jpg",
+  "title": "Ihlara Valley, Turkey.jpg",
+  "by": "Andrada Boldis",
+  "lic": "CC BY-SA 4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Ihlara_Valley,_Turkey.jpg"
+ },
+ "buyukada": {
+  "src": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/B%C3%9CY%C3%9CKADA_%C4%B0SKELE_-_panoramio.jpg/960px-B%C3%9CY%C3%9CKADA_%C4%B0SKELE_-_panoramio.jpg",
+  "big": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/B%C3%9CY%C3%9CKADA_%C4%B0SKELE_-_panoramio.jpg/1280px-B%C3%9CY%C3%9CKADA_%C4%B0SKELE_-_panoramio.jpg",
+  "title": "BÜYÜKADA İSKELE - panoramio.jpg",
+  "by": "Hüseyin Öcal",
+  "lic": "CC BY 3.0",
+  "page": "https://commons.wikimedia.org/wiki/File:B%C3%9CY%C3%9CKADA_%C4%B0SKELE_-_panoramio.jpg"
  }
 };

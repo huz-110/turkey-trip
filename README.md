@@ -1,6 +1,6 @@
 # turkey.trip: family planner, 4-15 Nov 2026
 
-An editable trip planner for 2 adults, a 13-year-old and a 5-year-old: Mumbai, Antalya, Cappadocia, Istanbul, Mumbai.
+An editable trip planner for 2 adults, a 13-year-old and a 5-year-old: Mumbai, Antalya (Vera Suites Arapsuyu, 4-8 Nov), Cappadocia (Tekkaya Cave Hotel, 8-11 Nov), Istanbul (Elysium Hotel Taksim, 11-15 Nov), Mumbai.
 
 **Open `index.html` in any browser.** No frameworks, no build step, no API keys. The planner works offline. Photos, fonts and the live forecast need an internet connection, and it falls back cleanly without one.
 
@@ -11,8 +11,8 @@ turkey-trip/
 ├── index.html   page shell, toolbar, journey bar
 ├── styles.css   Gen Z sticker look (light/dark, mobile, print)
 ├── app.js       UI: renders everything from the data files, handles edits
-├── data.js      single source of truth: itinerary, budget, research, luggage model
-├── photos.js    85 Wikimedia Commons photos (URLs + credits)
+├── data.js      single source of truth: nights split, fixed travel days, a ranked day bank per city, budget, research
+├── photos.js    89 Wikimedia Commons photos (URLs + credits)
 ├── weather.js   per-date weather normals for every stop (10-year averages)
 └── README.md
 ```
@@ -21,7 +21,7 @@ turkey-trip/
 
 | Tab | What it does |
 |---|---|
-| **Overview** | Hero, then **trip at a glance**, written so anyone can follow it: a plain-English status ("Trip starts in 45 days" / "Day 5 of 12, in Cappadocia, 7 days to go"), a labelled progress bar, and 3 stop cards (photo, dates, nights, typical weather, highlights) joined by the flight and drive legs. A tucked-away date picker previews any day. Then stat tiles, an editable budget, the key decisions and "check before you book". |
+| **Overview** | Hero, then **trip at a glance**, written so anyone can follow it: a plain-English status ("Trip starts in 45 days" / "Day 5 of 12, in Cappadocia, 7 days to go"), a labelled progress bar, and 3 stop cards (photo, dates, nights, hotel, typical weather, highlights) joined by the flight and drive legs. **Change nights per city** rebalances the 11 nights (2-6 per city) and rebuilds the whole plan, and **Copy link** shares that split (`?nights=4-3-4`). A tucked-away date picker previews any day. Then stat tiles, an editable budget, the key decisions and "check before you book". |
 | **The plan** | 12 photo day cards. Each shows **that day's weather for each city you're in** (high/low, how often it rained on that date in the last 10 years, sunset, what to wear). Add, edit, delete, reorder and tick activities. Filter by city and focus. |
 | **Intel Corner** | Food (Google 4.3+ with 300+ reviews, kebab and grill photos, plus 4 **sweets tiles**: baklava, lokum, künefe and Maraş ice cream, each with rated places, a kid verdict and whether it travels home), Activities (Klook / GYG / Viator / direct, in INR), Stays (micro-areas scored on 8 factors, listings, "score a listing"), **Driving + booster law**. |
 | **Logistics** | **Drive vs fly** calculator for Cappadocia to Istanbul, the **Luggage planner**, road legs, city weather, plan B and booking priority. |
@@ -33,7 +33,7 @@ The **journey bar** under the header is on every tab: it's colour-coded by city,
 ## Your questions, answered in the app
 
 - **Booster seat:** yes, it's mandatory. Turkish traffic regulation Art. 150 requires a child seat for children under 150 cm and under 36 kg in cars. The adult belt is only allowed over 135 cm, and only in the back. Riding on a lap or lying across the seat is not allowed. The fine is ₺1,246 per violation under KTK 78/1-a, and some 2026 sources say ₺2,500-5,000. The Intel Corner has comfort tips for a booster-hating 5-year-old.
-- **Cappadocia to Istanbul:** the drive day itself costs about ₹15k (rental, fuel, tolls). Flying costs about ₹30k for 4. Neither plan needs a car in Istanbul itself, so it's a clean like-for-like comparison. Flying saves about 4-5 h and about 9 h of booster time, so we'd fly. Every input is editable.
+- **Cappadocia to Istanbul:** you're driving on 11 Nov (leave Tekkaya 09:00, car back at IST, minivan to Taksim). The drive day costs about ₹15k (rental, fuel, tolls); flying would be about ₹30k for 4. The calculator keeps every input editable.
 - **Luggage:** reworked. Carrying all 7 pieces (2 large, 3 small, 2 backpacks) fits a C-sedan boot (about 78% full) and gives about 86 L of clothes space per person. Storing one large bag drops that to about 61 L, which is tight for cold Cappadocia. The planner lets you try any mix and pushes the storage cost into the budget.
 - **Weather:** Turkey stays on UTC+3 all year, so November sunsets are about 17:30-17:55. Every timing in the plan now uses the real sunrise and sunset.
 
@@ -42,6 +42,18 @@ The **journey bar** under the header is on every tab: it's colour-coded by city,
 - Everything you change is saved to **browser localStorage** (key `turkeyTrip.v2`). Ticks and budget edits from the first version carry over automatically.
 - To move to another device, **Export** there and **Import** here. **Reset** reloads the researched defaults.
 - To change the defaults, edit `data.js`, then press Reset in the app.
+
+## How the plan is built
+
+- `SPLIT` holds the nights per city (booked: 4-3-4). The app lays out the arrival day, each city's full days, the two drive days and the departure day from it.
+- Each city's `DAY_BANK` lists researched days. A city with N nights gets its N-1 best-ranked days, in a sensible order. Days avoid weekdays they're closed, and a booked day (the 10 Nov balloon) stays on its date when the split allows.
+- Date-bound items are added automatically: the 10 Nov 09:05 Atatürk siren, the early night before the balloon, balloon backup mornings and the pack-the-car evenings before each drive.
+- Stay, rental-car and fuel budget lines scale with the plan.
+
+## Publishing a change
+
+- Bump `dataVersion` in `TRIP_META` when the default plan changes. Every browser then rebuilds its days on the next visit and keeps ticks, packing, typed budget amounts and added activities.
+- Bump the `?v=` number on the five files in `index.html` so browsers fetch the new files instead of cached copies.
 
 ## Evidence labels
 

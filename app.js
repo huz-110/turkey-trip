@@ -22,58 +22,269 @@
     city: "All", focus: "All", hideDone: false,
     restCity: "All", actCity: "All", stayCity: "All",
     editing: null, showAdd: false, fuelKm: 530,
+    nights: null, nightsOpen: false,
     today: new URLSearchParams(location.search).get("today") || null
   };
 
   function uid() { return "a" + Math.random().toString(36).slice(2, 9); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
-  function defaults() {
-    const itinerary = clone(DEFAULT_ITINERARY).map(d => ({
-      ...d, activities: d.activities.map(a => ({ id: uid(), done: false, kids: false, ...a }))
-    }));
-    const packing = {};
-    Object.entries(DEFAULT_PACKING).forEach(([g, items]) => { packing[g] = items.map(t => ({ id: uid(), text: t, done: false })); });
-    return {
-      version: 2, itinerary, budgetLines: clone(DEFAULT_BUDGET_LINES), packing, driveChecks: {}, userListings: [],
-      luggage: clone(LUGGAGE_MODEL.defaults), dvf: clone(DRIVE_VS_FLY.inputs)
-    };
+  /* ---------------- plan builder ----------------
+     The itinerary is generated from a nights split (SPLIT in data.js):
+     fixed travel days + the best-ranked bank days for each city, then
+     date-bound extras (siren, balloon backups, packing evenings). */
+  const TRIP_NIGHTS = Math.round((Date.parse(TRIP_META.dates.end) - Date.parse(TRIP_META.dates.start)) / DAY_MS);
+  const ATATURK_DAY = TRIP_META.dates.start.slice(0, 4) + "-11-10";
+  const BANK_DAYS = [...Object.values(FIXED_DAYS), ...Object.values(DAY_BANK).flat()];
+  const BANK_BY_KEY = Object.fromEntries(BANK_DAYS.map(d => [d.key, d]));
+
+  function addDays(iso, n) { const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function weekday(iso) { return new Date(iso + "T12:00:00Z").getUTCDay(); }
+  function shortDate(iso) { return new Date(iso + "T12:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }); }
+  function listDates(isos) {
+    if (isos.length < 2) return isos.map(shortDate).join("");
+    const month = shortDate(isos[isos.length - 1]).split(" ")[1];
+    const days = isos.map(d => String(Number(d.slice(8))));
+    return `${days.slice(0, -1).join(", ")} or ${days[days.length - 1]} ${month}`;
+  }
+  function splitStr(sp) { return SPLIT.order.map(c => sp[c]).join("-"); }
+  function sameSplit(a, b) { return splitStr(a) === splitStr(b); }
+  function validSplit(sp) {
+    if (!sp) return null;
+    const n = SPLIT.order.map(c => Number(sp[c]));
+    if (n.some(x => !Number.isInteger(x) || x < SPLIT.min || x > SPLIT.max) || n.reduce((a, b) => a + b, 0) !== TRIP_NIGHTS) return null;
+    return Object.fromEntries(SPLIT.order.map((c, i) => [c, n[i]]));
+  }
+  function parseSplit(str) {
+    const parts = String(str || "").split("-");
+    return parts.length === SPLIT.order.length ? validSplit(Object.fromEntries(SPLIT.order.map((c, i) => [c, Number(parts[i])]))) : null;
+  }
+  function bankPicks(city, n) {
+    return DAY_BANK[city].slice().sort((a, b) => a.rank - b.rank).slice(0, n).sort((a, b) => a.order - b.order);
+  }
+  function pickedKeys(sp) { return new Set(SPLIT.order.flatMap(c => bankPicks(c, sp[c] - 1).map(d => d.key))); }
+  const closedOn = (src, iso) => (src.closed || []).includes(weekday(iso));
+  const condOk = (a, keys) => (!a.skipIf || !keys.has(a.skipIf)) && (!a.onlyIf || keys.has(a.onlyIf));
+
+  function planShape(split) {
+    const out = []; let date = TRIP_META.dates.start;
+    const push = (src, city) => { out.push({ src, city, date }); date = addDays(date, 1); };
+    push(FIXED_DAYS.arrive, "Travel");
+    SPLIT.order.forEach((city, i) => {
+      const first = out.length;
+      bankPicks(city, split[city] - 1).forEach(src => push(src, city));
+      const swap = (a, b) => { [out[a].src, out[b].src] = [out[b].src, out[a].src]; };
+      // A day you hold a booking for (the balloon) stays on its booked date if this split still covers it
+      for (let a = first; a < out.length; a++) {
+        const b = out.findIndex((x, i) => i >= first && x.date === out[a].src.booked);
+        if (b > -1 && b !== a) swap(a, b);
+      }
+      // Then swap days so nothing lands on a weekday it's closed (booked days don't move)
+      for (let a = first; a < out.length; a++) {
+        if (out[a].src.booked || !closedOn(out[a].src, out[a].date)) continue;
+        for (let b = first; b < out.length; b++) {
+          if (b !== a && !out[b].src.booked && !closedOn(out[b].src, out[a].date) && !closedOn(out[a].src, out[b].date)) { swap(a, b); break; }
+        }
+      }
+      if (i === 0) push(FIXED_DAYS["rt-cap"], "Road trip");
+      if (i === 1) push(FIXED_DAYS["rt-ist"], "Road trip");
+    });
+    push(FIXED_DAYS.depart, "Istanbul");
+    return out;
   }
 
-  function migrate(old) {
-    // Carry over the useful bits of a v1 save onto the new v2 defaults
-    const s = defaults();
-    const doneTitles = new Set((old.itinerary || []).flatMap(d => d.activities || []).filter(a => a.done).map(a => a.title));
-    s.itinerary.forEach(d => d.activities.forEach(a => { if (doneTitles.has(a.title)) a.done = true; }));
-    const packedTexts = new Set(Object.values(old.packing || {}).flat().filter(i => i.done).map(i => i.text));
-    Object.values(s.packing).flat().forEach(i => { if (packedTexts.has(i.text)) i.done = true; });
-    (old.budgetLines || []).forEach(l => { const n = s.budgetLines.find(x => x.id === l.id); if (n && l.id !== "b12") n.amount = l.amount; });
+  function planTokens(split, days) {
+    const byKey = Object.fromEntries(days.map(d => [d.key, d]));
+    const bal = byKey["cap-balloon"];
+    const backups = bal ? days.filter(d => (d.city === "Cappadocia" && d.date > bal.date) || d.key === "rt-ist").map(d => d.date) : [];
+    const n = (bal ? 1 : 0) + backups.length;
+    return {
+      days: Object.fromEntries(days.map(d => [d.key, shortDate(d.date)])),
+      driveCap: byKey["rt-cap"] ? shortDate(byKey["rt-cap"].date) : "",
+      driveIst: byKey["rt-ist"] ? shortDate(byKey["rt-ist"].date) : "",
+      balloon: bal ? shortDate(bal.date) : "the balloon day",
+      balloonBackup: backups.length ? listDates(backups) : "another morning (none left in this split)",
+      balloonNext: backups.length ? shortDate(backups[0]) : "another morning",
+      balloonChances: n === 1 ? "One morning gives" : `${["Two", "Three", "Four", "Five", "Six", "Seven"][n - 2] || n} mornings bring`,
+      balloonOdds: Math.round((1 - Math.pow(0.35, Math.max(n, 1))) * 100) + "%",
+      antDays: split.Antalya - 1,
+      preIstNights: split.Antalya + split.Cappadocia
+    };
+  }
+  function fill(text, tk) {
+    return String(text ?? "").replace(/\{(day:)?([\w-]+)\}/g, (m, isDay, k) => isDay ? (tk.days[k] || "a day not in this split") : (k in tk ? String(tk[k]) : m));
+  }
+
+  function insertByTime(list, a) {
+    const i = list.findIndex(x => !/^\d/.test(x.time) || x.time > a.time);
+    list.splice(i < 0 ? list.length : i, 0, a);
+  }
+  const newAct = a => ({ id: uid(), done: false, kids: false, ...clone(a) });
+
+  function autoActivities(days) {
+    const out = [];
+    const add = (d, a) => out.push([d, newAct({ cost: 0, auto: true, ...a })]);
+    const at = k => days.findIndex(d => d.key === k);
+    const siren = days.find(d => d.date === ATATURK_DAY);
+    if (siren) {
+      const road = siren.city === "Road trip";
+      add(siren, { time: "09:05", title: "10 November: Atatürk memorial siren", location: road ? "On the road" : "Wherever you are", category: "Driving", duration: "2 min", priority: "must", transport: "Flex",
+        notes: road ? "Sirens sound at 09:05 and many drivers stop. Slow down safely and don't overtake stopped cars."
+          : "Sirens sound nationwide at 09:05 and people stand still for about 2 minutes. If you're driving, pull over safely; otherwise just pause with everyone." });
+    }
+    const bi = at("cap-balloon");
+    if (bi > 0) {
+      const bDate = shortDate(days[bi].date);
+      add(days[bi - 1], { time: "20:30", title: "Early night: balloon pickup around 05:30", location: SPLIT.hotels.Cappadocia, category: "Rest", duration: "", priority: "must", transport: "Flex", notes: "Lay out warm layers, gloves and beanies for all 4 tonight." });
+      days.slice(bi + 1).filter(d => d.city === "Cappadocia" || d.key === "rt-ist").forEach(d => add(d, {
+        time: "05:30", title: `Balloon backup (only if ${bDate} was cancelled)`, location: "Göreme valleys", category: "Adventure", duration: "3.5 h", priority: "optional", transport: "Operator shuttle", img: "balloon2",
+        notes: d.key === "rt-ist" ? "If you fly this morning, leave for Istanbul at 10:00 instead of 09:00. Price already counted." : "Price already counted on the balloon day."
+      }));
+    }
+    [["rt-cap", "Leave Vera Suites by 08:30. Check the Taurus pass weather tonight."], ["rt-ist", "Leave Tekkaya at 09:00 (10:00 if the balloon moves to that morning)."]].forEach(([k, notes]) => {
+      const i = at(k);
+      if (i > 0) add(days[i - 1], { time: "21:30", title: "Pack the car for tomorrow's long drive", location: "", category: "Rest", duration: "30 min", priority: "must", transport: "Flex", notes });
+    });
+    return out;
+  }
+
+  function buildItinerary(split) {
+    const shape = planShape(split);
+    const keys = new Set(shape.map(s => s.src.key));
+    const tk = planTokens(split, shape.map(s => ({ key: s.src.key, city: s.city, date: s.date })));
+    const days = shape.map(({ src, city, date }) => {
+      const { rank, order, closed, booked, activities, ...rest } = clone(src);
+      const d = { ...rest, city, date };
+      ["title", "child", "booking", "contingency"].forEach(f => { if (d[f]) d[f] = fill(d[f], tk); });
+      if (city === "Istanbul" && weekday(date) === 5 && activities.some(a => /mosque|Hagia Sophia/i.test(a.title))) d.booking += " It's Friday: mosques close to visitors around midday prayers.";
+      if (booked && booked !== date) d.booking += ` Heads-up: your booking is for ${shortDate(booked)}, but this split puts this day on ${shortDate(date)}. Move the booking or change the nights back.`;
+      d.activities = activities.filter(a => condOk(a, keys)).map(newAct);
+      return d;
+    });
+    autoActivities(days).forEach(([d, a]) => insertByTime(d.activities, a));
+    return days;
+  }
+
+  /* Budget lines with a "basis" follow the plan (nights, rental days, km) */
+  function planUnits(s) {
+    // Rental-car km only: the car goes back at the end of the Istanbul drive day
+    const ret = s.itinerary.findIndex(d => d.key === "rt-ist");
+    const km = s.itinerary.slice(0, ret + 1).reduce((t, d) => t + (Number(d.drive?.km) || 0), 0);
+    return { "nights:Antalya": s.split.Antalya, "nights:Cappadocia": s.split.Cappadocia, "nights:Istanbul": s.split.Istanbul, rentalDays: s.split.Antalya + s.split.Cappadocia, km };
+  }
+  function syncDerived(s) {
+    const u = planUnits(s);
+    s.budgetLines.forEach(l => {
+      if (!l.basis || !(l.basis in u)) return;
+      const n = u[l.basis];
+      l.amount = Math.round(l.rate * n / 100) * 100;
+      if (l.labelTpl) l.label = l.labelTpl.replace("{n}", (l.basis === "km" ? Math.round(n / 10) * 10 : n).toLocaleString("en-IN"));
+      if (l.noteTpl) l.note = l.noteTpl.replace("{litres}", Math.round(n * DRIVE_VS_FLY.inputs.cons / 100));
+    });
+    return s;
+  }
+
+  function defaults(split = SPLIT.default) {
+    const packing = {};
+    Object.entries(DEFAULT_PACKING).forEach(([g, items]) => { packing[g] = items.map(t => ({ id: uid(), text: t, done: false })); });
+    return syncDerived({
+      version: 2, dataVersion: TRIP_META.dataVersion, split: { ...split }, itinerary: buildItinerary(split),
+      budgetLines: clone(DEFAULT_BUDGET_LINES), packing, driveChecks: {}, userListings: [],
+      luggage: { ...clone(LUGGAGE_MODEL.defaults), days: split.Antalya + split.Cappadocia }, dvf: clone(DRIVE_VS_FLY.inputs)
+    });
+  }
+
+  // A save from an older version of the plan: rebuild the days, keep what the user did
+  let migrated = false;
+  function carryOver(old, split) {
+    migrated = true;
+    const s = defaults(split);
+    const done = new Set((old.itinerary || []).flatMap(d => d.activities || []).filter(a => a.done).map(a => a.title));
+    const oldDays = Object.fromEntries((old.itinerary || []).filter(d => d.key).map(d => [d.key, d]));
+    s.itinerary.forEach(d => {
+      d.activities.forEach(a => { if (done.has(a.title)) a.done = true; });
+      ((oldDays[d.key] || {}).activities || []).filter(a => a.custom).forEach(a => insertByTime(d.activities, a));
+    });
+    const known = new Set(Object.values(s.packing).flat().map(i => i.text));
+    Object.entries(old.packing || {}).forEach(([g, items]) => (items || []).forEach(i => {
+      const hit = Object.values(s.packing).flat().find(x => x.text === i.text);
+      if (hit) hit.done = hit.done || !!i.done;
+      else if (!known.has(i.text)) { (s.packing[g] = s.packing[g] || []).push({ id: i.id || uid(), text: i.text, done: !!i.done }); known.add(i.text); }
+    }));
+    s.budgetLines.forEach(l => {
+      const o = (old.budgetLines || []).find(x => x.id === l.id);
+      if (!o || l.id === "b12") return;
+      if (!l.basis) l.amount = o.amount;
+      else if (old.dataVersion && o.rate) l.rate = o.rate;
+    });
     s.driveChecks = old.driveChecks || {};
     s.userListings = old.userListings || [];
-    return s;
+    if (old.luggage) s.luggage = { ...s.luggage, ...old.luggage, days: split.Antalya + split.Cappadocia };
+    if (old.dvf) Object.keys(s.dvf).forEach(k => { if (typeof old.dvf[k] === "number") s.dvf[k] = old.dvf[k]; });
+    return syncDerived(s);
   }
 
   // Photos aren't user-editable, so saved plans always pick up the latest default images
   function syncImages(s) {
-    const byTitle = {}, byDate = {};
-    DEFAULT_ITINERARY.forEach(d => { byDate[d.date] = d.img; d.activities.forEach(a => { if (a.img) byTitle[a.title] = a.img; }); });
-    s.itinerary.forEach(d => { if (byDate[d.date]) d.img = byDate[d.date]; d.activities.forEach(a => { if (byTitle[a.title]) a.img = byTitle[a.title]; }); });
+    const byTitle = {};
+    BANK_DAYS.forEach(d => d.activities.forEach(a => { if (a.img) byTitle[a.title] = a.img; }));
+    s.itinerary.forEach(d => { if (BANK_BY_KEY[d.key]) d.img = BANK_BY_KEY[d.key].img; d.activities.forEach(a => { if (byTitle[a.title]) a.img = byTitle[a.title]; }); });
     return s;
   }
 
+  function fromSaved(s) {
+    if (!s || !Array.isArray(s.itinerary)) return defaults();
+    const split = validSplit(s.split) || SPLIT.default;
+    if (s.dataVersion === TRIP_META.dataVersion && s.split) {
+      // Day order, dates and day text always come from the current rules; activities and ticks carry over
+      const st = { ...defaults(split), ...s, split };
+      st.itinerary = mergeDays(s.itinerary, split);
+      // Labels and notes follow the latest data; amounts (and per-unit rates) stay as the user set them
+      st.budgetLines = clone(DEFAULT_BUDGET_LINES).map(l => {
+        const o = (s.budgetLines || []).find(x => x.id === l.id);
+        if (o) { if (l.basis) l.rate = o.rate ?? l.rate; else l.amount = o.amount; }
+        return l;
+      });
+      return syncDerived(syncImages(st));
+    }
+    return carryOver(s, split);
+  }
   function load() {
     try {
       const raw = localStorage.getItem(STORE_KEY);
-      if (raw) {
-        const s = JSON.parse(raw);
-        if (s && Array.isArray(s.itinerary)) return syncImages({ ...defaults(), ...s });
-      }
+      if (raw) return fromSaved(JSON.parse(raw));
       const old = localStorage.getItem(OLD_KEY);
-      if (old) return migrate(JSON.parse(old));
+      if (old) return carryOver(JSON.parse(old), SPLIT.default);
     } catch (e) { /* storage blocked or corrupt: fall back to defaults */ }
     return defaults();
   }
   let state = load();
+
+  // Fresh days for a split, keeping the activities (edits, ticks, additions) of days that stay
+  function mergeDays(oldIt, split) {
+    const fresh = buildItinerary(split);
+    const keys = new Set(fresh.map(d => d.key));
+    const oldByKey = Object.fromEntries(oldIt.map(d => [d.key, d]));
+    const done = new Set(oldIt.flatMap(d => d.activities).filter(a => a.done).map(a => a.title));
+    fresh.forEach(d => {
+      const o = oldByKey[d.key];
+      if (!o) { d.activities.forEach(a => { if (done.has(a.title)) a.done = true; }); return; }
+      const cond = (BANK_BY_KEY[d.key]?.activities || []).filter(a => a.skipIf || a.onlyIf);
+      const gone = new Set(cond.filter(a => !condOk(a, keys)).map(a => a.title));
+      const autos = d.activities.filter(a => a.auto);
+      const autoDone = new Set(o.activities.filter(a => a.auto && a.done).map(a => a.title));
+      d.activities = o.activities.filter(a => !a.auto && !gone.has(a.title));
+      cond.filter(a => condOk(a, keys) && !d.activities.some(x => x.title === a.title)).forEach(a => insertByTime(d.activities, newAct(a)));
+      autos.forEach(a => { a.done = autoDone.has(a.title); insertByTime(d.activities, a); });
+    });
+    return fresh;
+  }
+  function applySplit(split) {
+    state.itinerary = mergeDays(state.itinerary, split);
+    state.split = { ...split };
+    state.luggage.days = split.Antalya + split.Cappadocia;
+    syncDerived(state);
+  }
 
   function save(quiet) {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); if (!quiet) flash("Saved ✓"); }
@@ -284,9 +495,12 @@
   const sumIds = ids => state.budgetLines.filter(l => ids.includes(l.id)).reduce((s, l) => s + (Number(l.amount) || 0), 0);
 
   /* ---------------- chrome ---------------- */
+  let TK = planTokens(state.split, state.itinerary);
+  const F = t => fill(t, TK);
   const TABS = [["overview", "Overview"], ["itinerary", "The plan"], ["intel", "Intel Corner"], ["logistics", "Logistics"], ["money", "Money"], ["packing", "Pack"]];
 
   function render() {
+    TK = planTokens(state.split, state.itinerary);
     $("#nav").innerHTML = TABS.map(([k, v]) => `<button class="tab ${ui.tab === k ? "on" : ""}" data-tab="${k}" ${ui.tab === k ? 'aria-current="page"' : ""}>${v}</button>`).join("");
     $("#journeybar").innerHTML = journeyBar();
     const view = { overview: vOverview, itinerary: vItinerary, intel: vIntel, logistics: vLogistics, money: vMoney, packing: vPacking }[ui.tab];
@@ -312,7 +526,7 @@
     const b = budgetSummary();
     const pct = Math.min(100, (b.core / TRIP_META.budget.max) * 100);
     const over = b.core - TRIP_META.budget.max;
-    const km = state.itinerary.reduce((s, d) => s + (Number(d.drive?.km) || 0), 0);
+    const km = planUnits(state).km;
     const acts = state.itinerary.flatMap(d => d.activities);
     const done = acts.filter(a => a.done).length;
     const exFlights = b.core - sumIds(["b1", "b3"]);
@@ -338,8 +552,8 @@
     ${trackerPanel()}
 
     <section class="bento reveal">
-      <div class="tile t-nights">${photo("city_cappadocia", "tile-bg no-peek")}<div class="tile-in"><small>Nights</small><b>11</b><span>Antalya 4 · Cappadocia 3 · Istanbul 4</span></div></div>
-      <div class="tile t-drive c-lime"><small>Driving</small><b>${km.toLocaleString("en-IN")} km</b><span>Big days: 8 &amp; 11 Nov</span></div>
+      <div class="tile t-nights">${photo("city_cappadocia", "tile-bg no-peek")}<div class="tile-in"><small>Nights</small><b>${TRIP_NIGHTS}</b><span>${SPLIT.order.map(c => `${c} ${state.split[c]}`).join(" · ")}</span></div></div>
+      <div class="tile t-drive c-lime"><small>Driving</small><b>${km.toLocaleString("en-IN")} km</b><span>Big days: ${esc([TK.days["ant-pamukkale"], TK.driveCap, TK.driveIst].filter(Boolean).join(", "))}</span></div>
       <div class="tile t-cost c-pink"><small>Core cost</small><b>${lakh(b.core)}</b><span>${lakh(b.all)} with optional extras</span></div>
       <div class="tile t-done c-aqua"><small>Done</small><b>${done}/${acts.length}</b><span>Tick things off in The plan</span></div>
     </section>
@@ -381,10 +595,10 @@
           <div class="d-body">
             <h3>${esc(d.topic)}</h3>
             <dl>
-              <dt>My plan</dt><dd>${esc(d.mine)}</dd>
-              <dt>Finding</dt><dd>${esc(d.finding)} ${evidenceIn(d.finding)}</dd>
-              <dt class="rec">Do this</dt><dd class="rec">${esc(d.rec)}</dd>
-              <dt>Why</dt><dd>${esc(d.why)}</dd>
+              <dt>My plan</dt><dd>${esc(F(d.mine))}</dd>
+              <dt>Finding</dt><dd>${esc(F(d.finding))} ${evidenceIn(d.finding)}</dd>
+              <dt class="rec">Do this</dt><dd class="rec">${esc(F(d.rec))}</dd>
+              <dt>Why</dt><dd>${esc(F(d.why))}</dd>
             </dl>
           </div>
         </article>`).join("")}</div>
@@ -398,14 +612,75 @@
         <div>${statusBadge("Verified")} <b>Booster seat is the law.</b> Under 150 cm and 36 kg means a child seat. No laps. <a href="#" data-go="intel" data-intel="driving">Read the rule →</a></div>
         <div>${statusBadge("Traveller-reported")} <b>IDP is mandatory</b> for an Indian licence. Get it at your RTO before you fly.</div>
         <div>${statusBadge("Needs confirmation")} <b>Visa.</b> Indian passports get an e-Visa only with a valid US/UK/Schengen/Irish visa or residence permit. Otherwise VFS.</div>
-        <div>${statusBadge("Verified")} <b>10 Nov is Atatürk Memorial Day.</b> Sirens sound at 09:05 while you're in Cappadocia.</div>
+        <div>${statusBadge("Verified")} <b>10 Nov is Atatürk Memorial Day.</b> Sirens sound at 09:05${sirenWhere()}.</div>
       </div>
     </section>`;
   }
 
+  /* Route for the tracker: legs + one stop per city, from the current split */
+  function route() {
+    const days = state.itinerary, out = [];
+    const leg = k => ({ type: "leg", date: days.find(d => d.key === k)?.date, ...SPLIT.legs[k] });
+    out.push(leg("arrive"));
+    let from = TRIP_META.dates.start;
+    SPLIT.order.forEach((city, i) => {
+      const to = addDays(from, state.split[city]);
+      const blurb = days.filter(d => d.city === city && d.tag).map(d => d.tag).join(", ");
+      out.push({ type: "stop", city, from, to, wx: SPLIT.wx[city], hotel: SPLIT.hotels[city], blurb: blurb.charAt(0).toUpperCase() + blurb.slice(1) });
+      if (i < SPLIT.order.length - 1) out.push(leg(i === 0 ? "rt-cap" : "rt-ist"));
+      from = to;
+    });
+    out.push(leg("depart"));
+    return out;
+  }
+  function sirenWhere() {
+    const d = state.itinerary.find(x => x.date === ATATURK_DAY);
+    return !d ? "" : d.city === "Road trip" ? " while you're on the road" : ` while you're in ${d.city}`;
+  }
+
+  /* Change nights per city: a draft (ui.nights) the user steps through, then applies */
+  function nightsEditor() {
+    const draft = ui.nights || state.split;
+    const sum = SPLIT.order.reduce((t, c) => t + draft[c], 0);
+    const ok = sum === TRIP_NIGHTS, changed = !sameSplit(draft, state.split);
+    const fmt = (sp) => SPLIT.order.map(c => `${c} ${sp[c]}`).join(" · ");
+    let from = TRIP_META.dates.start;
+    const rows = SPLIT.order.map(c => {
+      const to = addDays(from, draft[c]), range = `${shortDate(from)} to ${shortDate(to)}`; from = to;
+      return `<div class="nt c-${CITIES[c].color}">
+        <span class="nt-city">${CITIES[c].emoji} ${esc(c)}</span>
+        <span class="stepper"><button class="icon" data-nights="${c}|-1" ${draft[c] <= SPLIT.min ? "disabled" : ""} aria-label="One night less in ${esc(c)}">−</button><b>${draft[c]}</b><button class="icon" data-nights="${c}|1" ${draft[c] >= SPLIT.max ? "disabled" : ""} aria-label="One night more in ${esc(c)}">+</button></span>
+        <small>${ok ? range : "&nbsp;"}</small></div>`;
+    }).join("");
+    let diff = "";
+    if (ok && changed) {
+      const now = pickedKeys(state.split), next = pickedKeys(draft);
+      const all = Object.values(DAY_BANK).flat();
+      const added = all.filter(d => next.has(d.key) && !now.has(d.key)).map(d => d.title);
+      const dropped = all.filter(d => now.has(d.key) && !next.has(d.key)).map(d => d.title);
+      diff = `<div class="nt-diff">${added.length ? `<p><b class="pos">Adds:</b> ${added.map(esc).join(" · ")}</p>` : ""}${dropped.length ? `<p><b class="neg">Drops:</b> ${dropped.map(esc).join(" · ")}</p>` : ""}<p class="muted">Every later date (drives, balloon backup, budget, rental days) moves with it.</p></div>`;
+    }
+    const status = ok ? `${sum} of ${TRIP_NIGHTS} nights ✓` : sum > TRIP_NIGHTS ? `${sum} of ${TRIP_NIGHTS} nights: take ${sum - TRIP_NIGHTS} away` : `${sum} of ${TRIP_NIGHTS} nights: add ${TRIP_NIGHTS - sum}`;
+    return `
+      <details class="tr-nights" id="nightsBox" ${ui.nightsOpen ? "open" : ""}>
+        <summary>✏️ Change nights per city <span class="muted">(now ${esc(fmt(state.split))})</span></summary>
+        <p class="small muted">Flights stay fixed (land ${shortDate(TRIP_META.dates.start)}, fly home ${shortDate(TRIP_META.dates.end)}), so the three stops share ${TRIP_NIGHTS} nights, ${SPLIT.min}-${SPLIT.max} each. Extra nights add the next-best researched day for that city.</p>
+        <div class="nt-grid">${rows}</div>
+        <p class="nt-status ${ok ? "ok" : "bad"}">${status}</p>
+        ${!sameSplit(draft, SPLIT.booked) ? `<p class="nt-warn">🛏 Your hotels are booked for ${esc(fmt(SPLIT.booked))}. Treat this as a what-if until you change those bookings.</p>` : ""}
+        ${diff}
+        <div class="nt-actions">
+          <button class="btn primary sm" data-act="apply-nights" ${ok && changed ? "" : "disabled"}>Rebuild the plan</button>
+          <button class="btn sm" data-act="booked-nights" ${sameSplit(draft, SPLIT.booked) ? "disabled" : ""}>Back to booked (${esc(splitStr(SPLIT.booked))})</button>
+          <button class="btn sm" data-act="share-nights">🔗 Copy link to this plan</button>
+        </div>
+      </details>`;
+  }
+
   function trackerPanel() {
     const j = journey(), nu = nextUp(j), t = todayISO();
-    const stops = ROUTE.filter(r => r.type === "stop"), legs = ROUTE.filter(r => r.type === "leg");
+    const R = route();
+    const stops = R.filter(r => r.type === "stop"), legs = R.filter(r => r.type === "leg");
     const noon = d => new Date(d + "T12:00:00");
     const nights = s => Math.round((noon(s.to) - noon(s.from)) / DAY_MS);
     const span = s => `${noon(s.from).getDate()}-${noon(s.to).getDate()} ${noon(s.to).toLocaleDateString("en-GB", { month: "short" })}`;
@@ -443,6 +718,7 @@
         <div class="rt-body">${badge}<h3>${c.emoji || ""} ${esc(s.city)}</h3>
           <p class="rt-dates">${span(s)} · ${nights(s)} nights</p>
           ${w ? `<p class="rt-wx">${w.icon} About ${w.hi}° by day, ${w.lo}° at night</p>` : ""}
+          ${s.hotel ? `<p class="rt-hotel">🛏 ${esc(s.hotel)}</p>` : ""}
           <p class="rt-blurb">${esc(s.blurb)}</p></div></article>`;
     };
 
@@ -455,7 +731,8 @@
         ${j.phase === "during" ? `<span class="tr-pin" style="left:${j.pct}%"><i>Today</i></span>` : ""}
       </div>
       <div class="tr-ends"><span>${fmtDate(TRIP_META.dates.start, { day: "numeric", month: "short" })} · leave Mumbai</span><span>${fmtDate(TRIP_META.dates.end, { day: "numeric", month: "short" })} · home</span></div>
-      <div class="route">${ROUTE.map(r => r.type === "leg" ? leg(r) : stop(r)).join("")}</div>
+      <div class="route">${R.map(r => r.type === "leg" ? leg(r) : stop(r)).join("")}</div>
+      ${nightsEditor()}
       ${nu && nu.a ? `<div class="tr-next"><small>${j.phase === "before" ? "First up" : "Next up"}</small><b>${esc(nu.when)}, ${esc(nu.a.time)}: ${esc(nu.a.title)}</b></div>` : ""}
       <details class="tr-preview" ${ui.today ? "open" : ""}><summary>Preview how this looks on another date</summary>
         <input type="date" id="previewDate" min="2026-10-01" max="2026-11-20" value="${ui.today || ""}" aria-label="Preview date">
@@ -477,7 +754,8 @@
   function vItinerary() {
     const costs = activityCosts(); const j = journey();
     return `
-    <section class="page-head"><h1>The plan, day by day.</h1><p class="lede">Weather on each card is the 10-year average for that exact date. It switches to the live forecast 16 days out.</p></section>
+    <section class="page-head"><h1>The plan, day by day.</h1><p class="lede">Weather on each card is the 10-year average for that exact date. It switches to the live forecast 16 days out.</p>
+      <button class="btn sm" data-act="open-nights">✏️ Change nights per city (${esc(splitStr(state.split))})</button></section>
     <div class="toolbar-row">
       <div class="chips" role="group" aria-label="City">${["All", ...CITY_ORDER].map(c => `<button class="chip ${ui.city === c ? "on" : ""}" data-city="${c}">${c}</button>`).join("")}</div>
       <div class="chips" role="group" aria-label="Focus">${FOCUS.map(f => `<button class="chip ${ui.focus === f ? "on" : ""}" data-focus="${f}">${f}</button>`).join("")}</div>
@@ -780,7 +1058,7 @@
             <label>₺ / litre<input id="fPrice" type="number" min="1" step="0.5" value="${D.fuel.priceTRY}"></label>
             <div class="calc-out" id="fOut"></div>
           </div>
-          <div class="chips">${[["Antalya to Göreme", 530], ["Göreme to Istanbul", 730], ["Whole trip", 1700]].map(([l, k]) => `<button class="chip" data-km="${k}">${l} · ${k} km</button>`).join("")}</div>
+          <div class="chips">${[["Antalya to Göreme", 530], ["Göreme to Istanbul", 730], ...(TK.days["ant-pamukkale"] ? [["Pamukkale day", 515]] : []), ["Whole trip", Math.round(planUnits(state).km / 10) * 10]].map(([l, k]) => `<button class="chip" data-km="${k}">${l} · ${k} km</button>`).join("")}</div>
         </div>
       </section>
 
@@ -823,7 +1101,7 @@
     const i = state.dvf;
     const fuelTRY = i.km * i.cons / 100 * i.fuelTRY;
     const drive = [
-      ["Rental day (11 Nov)", i.rentalDayINR],
+      [`Rental day (${TK.driveIst})`, i.rentalDayINR],
       [`Fuel ${i.km} km at ${i.cons} L/100 km`, fuelTRY * FX.TRY],
       ["Tolls (HGS)", i.tollsTRY * FX.TRY]
     ];
@@ -870,7 +1148,7 @@
           </article>
         </div>
         <div class="verdict-bar">${diff > 0
-          ? `<b>Verdict:</b> flying costs <b>${inr(diff)}</b> more but buys back most of a day and spares your 5-year-old about 9 hours in a booster. <b>We'd fly.</b> If budget is the priority, drive and break at Tuz Gölü.`
+          ? `<b>Your call: drive.</b> It's <b>${inr(diff)}</b> cheaper than flying. Flying would buy back most of a day and about 9 hours of booster time, so break the drive at Tuz Gölü and Ankara.`
           : `<b>Verdict:</b> flying is cheaper <i>and</i> faster with these inputs. <b>Fly.</b>`}</div>
         <details class="dvf-inputs"><summary>Tweak the inputs</summary>
           <div class="form-grid">
@@ -878,7 +1156,7 @@
             ${input("tollsTRY", "Tolls (₺)", 10)}${input("ticketINR", "Ticket per person (₹)")}${input("people", "People", 1)}
             ${input("bagFeeINR", "Excess bags (₹)")}${input("airportDriveKm", "Hotel to airport (km)", 5)}${input("transferINR", "IST minivan (₹)")}
           </div>
-          <ul class="bullets small">${Object.values(DRIVE_VS_FLY.notes).map(n => `<li>${esc(n)}</li>`).join("")}</ul>
+          <ul class="bullets small">${Object.values(DRIVE_VS_FLY.notes).map(n => `<li>${esc(F(n))}</li>`).join("")}</ul>
           <button class="btn sm" data-act="reset-dvf">Reset inputs</button>
         </details>
       </section>`;
@@ -915,11 +1193,11 @@
     const fillCls = c.fill <= 85 ? "good" : c.fill <= 100 ? "mid" : "bad";
     const fillTxt = c.fill <= 85 ? "Fits with room to spare" : c.fill <= 100 ? "Tight. Soft bags help." : "Won't fit. Size up the car or store more.";
     const wardCls = c.wardrobe >= 75 ? "good" : c.wardrobe >= 50 ? "mid" : "bad";
-    const wardTxt = c.wardrobe >= 75 ? "Comfortable for warm Antalya + cold Cappadocia" : c.wardrobe >= 50 ? "Tight. Plan a laundry stop." : "Very tight for 7 nights with winter layers";
+    const wardTxt = c.wardrobe >= 75 ? "Comfortable for warm Antalya + cold Cappadocia" : c.wardrobe >= 50 ? "Tight. Plan a laundry stop." : `Very tight for ${TK.preIstNights} nights with winter layers`;
     return `
       <section class="panel luggage reveal" id="luggage">
         <div class="panel-h"><h2>Luggage planner 🧳</h2><span class="muted">Your real bags, your call</span></div>
-        <p class="lede small">You've got 2 large, 3 small and 2 backpacks. Set what you own and what (if anything) you'd leave at IST for the first 7 nights. Everything below recalculates, and storage cost flows into the budget.</p>
+        <p class="lede small">You've got 2 large, 3 small and 2 backpacks. Set what you own and what (if anything) you'd leave at IST for the first ${TK.preIstNights} nights. Everything below recalculates, and storage cost flows into the budget.</p>
         <div class="presets">${M.presets.map((p, i) => `<button class="chip ${JSON.stringify(p.store) === JSON.stringify(L.store) ? "on" : ""}" data-preset="${i}">${esc(p.name)}</button>`).join("")}</div>
         <div class="lug-grid">
           <div class="lug-table">
@@ -935,7 +1213,7 @@
           <div class="lug-out">
             <div class="lo ${fillCls}"><small>Car boot</small><b>${Math.round(c.fill)}% full</b><div class="mini-bar"><i style="width:${Math.min(100, c.fill)}%"></i></div><span>${fillTxt}. ${Math.round(c.bootL)} L of bags vs about ${Math.round(c.usable)} L usable. Backpacks ride at your feet.</span></div>
             <div class="lo ${c.excessKg > 0 ? "mid" : "good"}"><small>IST to AYT flight</small><b>${c.checkedKg} kg checked</b><span>Allowance ${c.allowance} kg (${c.fare.kg} kg × 4, if pooled). ${c.excessKg > 0 ? `About ${c.excessKg} kg over, roughly ${tl(c.excessTRY)} (${inr(c.excessTRY * FX.TRY)}).` : "Within allowance."} ${c.heavyBag ? "A large bag is heavier than one person's allowance, so book all 4 on one booking and ask TK to pool (Needs confirmation), or pick ExtraFly." : ""} ${!c.cabinOk ? "Too many cabin bags: max 1 each." : ""}${!c.personalOk ? " Too many personal items." : ""}</span></div>
-            <div class="lo ${wardCls}"><small>Wardrobe space, first 7 nights</small><b>${Math.round(c.wardrobe)} L / person</b><span>${wardTxt} ${statusBadge("Estimated")}</span></div>
+            <div class="lo ${wardCls}"><small>Wardrobe space, first ${TK.preIstNights} nights</small><b>${Math.round(c.wardrobe)} L / person</b><span>${wardTxt} ${statusBadge("Estimated")}</span></div>
             <div class="lo ${c.storeTRY ? "mid" : "good"}"><small>Storage at IST</small><b>${c.storeTRY ? tl(c.storeTRY) : "₹0"}</b><span>${c.storeTRY ? `≈ ${inr(c.storeTRY * FX.TRY)} for ${L.days} days. Added to the budget automatically. The staffed desk is in arrivals, opposite Exit 13.` : "Nothing stored. No airport detour on the way back."}</span></div>
             <div class="lo ${c.bigUp > 2 ? "mid" : "good"}"><small>Cave-hotel stairs</small><b>${c.bigUp} big ${c.bigUp === 1 ? "bag" : "bags"}</b><span>Ask the hotel for porter help. Göreme lanes are steep.</span></div>
             <div class="lo"><small>Flying home</small><b>${c.homePieces} pieces</b><span>Confirm IndiGo's per-passenger allowance. Book a minivan to IST (a normal taxi won't fit this).</span></div>
@@ -945,16 +1223,16 @@
   }
 
   function vLogistics() {
-    const cities = [["Antalya", "antalya", "2026-11-05"], ["Cappadocia", "goreme", "2026-11-09"], ["Istanbul", "istanbul", "2026-11-12"]];
+    const cities = SPLIT.order.map(c => [c, SPLIT.wx[c], state.itinerary.find(d => d.city === c).date]);
     return `
       <section class="page-head"><h1>Bags, wheels &amp; wings.</h1><p class="lede">Drive vs fly, the luggage planner, road legs, weather and bookings.</p></section>
       ${vDvf()}
       ${vLuggage()}
       <section class="panel reveal">
         <div class="panel-h"><h2>Road legs</h2></div>
-        <div class="legs">${DRIVING.legs.map(l => `<article class="leg-card"><h3>${esc(l.name)}</h3>
+        <div class="legs">${DRIVING.legs.map(l => `<article class="leg-card"><h3>${esc(F(l.name))}</h3>
           <div class="leg-stats"><span><b>${esc(l.km)}</b> km</span><span><b>${esc(l.time)}</b></span></div>
-          <p class="small"><b>Route:</b> ${esc(l.route)}</p><p class="small"><b>Tolls:</b> ${esc(l.tolls)}</p><p class="small"><b>Stops:</b> ${esc(l.stops)}</p><p class="tip">⚠️ ${esc(l.notes)}</p></article>`).join("")}</div>
+          <p class="small"><b>Route:</b> ${esc(l.route)}</p><p class="small"><b>Tolls:</b> ${esc(l.tolls)}</p><p class="small"><b>Stops:</b> ${esc(l.stops)}</p><p class="tip">⚠️ ${esc(F(l.notes))}</p></article>`).join("")}</div>
       </section>
       <section class="panel reveal">
         <div class="panel-h"><h2>November weather, per city</h2>${statusBadge("Estimated")}</div>
@@ -962,11 +1240,11 @@
         <div class="weather">${cities.map(([n, p, d]) => { const days = Object.values(WX_NORMALS[p]); const hi = Math.round(days.reduce((s, x) => s + x.hi, 0) / days.length), lo = Math.round(days.reduce((s, x) => s + x.lo, 0) / days.length); const w = WX_NORMALS[p][d]; return `
           <article class="wcard c-${CITIES[n].color}">${photo(CITIES[n].img, "w-img")}<div class="w-body"><h3>${esc(n)}</h3><b class="temp">${hi}° / ${lo}°</b><p class="small">Rain on about ${Math.round(days.reduce((s, x) => s + x.rain, 0) / days.length)}% of days · sunrise ${w.rise} · sunset ${w.set}</p><p class="small">${n === "Antalya" ? "Still T-shirt weather by day. The sea is swimmable for the brave." : n === "Cappadocia" ? "Frosty dawns around 2 °C for the balloon. Pack a down jacket, gloves and a beanie." : "Mild and often grey. A waterproof shell and umbrella earn their space."}</p></div></article>`; }).join("")}</div>
         <h3 class="mt">Plan B for everything</h3>
-        <div class="contingency">${CONTINGENCIES.map(([k, v]) => `<div><b>${esc(k)}</b><p class="small">${esc(v)}</p></div>`).join("")}</div>
+        <div class="contingency">${CONTINGENCIES.map(([k, v]) => `<div><b>${esc(k)}</b><p class="small">${esc(F(v))}</p></div>`).join("")}</div>
       </section>
       <section class="panel reveal">
         <div class="panel-h"><h2>Booking priority</h2></div>
-        <div class="bookings">${Object.entries(BOOKINGS).map(([k, items], i) => `<div class="bcol b${i}"><h3>${esc(k)}</h3><ul>${items.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>`).join("")}</div>
+        <div class="bookings">${Object.entries(BOOKINGS).map(([k, items], i) => `<div class="bcol b${i}"><h3>${esc(k)}</h3><ul>${items.map(x => `<li>${esc(F(x))}</li>`).join("")}</ul></div>`).join("")}</div>
       </section>`;
   }
 
@@ -1045,6 +1323,27 @@
     if (ds.act === "cancel-edit") { ui.editing = null; return render(); }
     if (ds.act === "clear-preview") { ui.today = null; return render(); }
     if (ds.act === "reset-dvf") { state.dvf = clone(DRIVE_VS_FLY.inputs); save(); return render(); }
+    if (ds.nights) {
+      const [c, delta] = ds.nights.split("|"); const d = { ...(ui.nights || state.split) };
+      d[c] = Math.min(SPLIT.max, Math.max(SPLIT.min, d[c] + Number(delta)));
+      ui.nights = d; ui.nightsOpen = true; return render();
+    }
+    if (ds.act === "booked-nights") { ui.nights = { ...SPLIT.booked }; ui.nightsOpen = true; return render(); }
+    if (ds.act === "apply-nights") {
+      const sp = validSplit(ui.nights); if (!sp) return;
+      const keep = pickedKeys(sp);
+      const lost = state.itinerary.filter(d => BANK_BY_KEY[d.key]?.rank && !keep.has(d.key)).flatMap(d => d.activities.filter(a => a.done || a.custom)).length;
+      if (lost && !confirm(`${lost} ticked or added ${lost === 1 ? "activity is" : "activities are"} on days this split drops. Rebuild anyway?`)) return;
+      applySplit(sp); syncStorageBudget(); ui.nights = null; save(true); render();
+      return flash(`Plan rebuilt: ${SPLIT.order.map(c => `${c} ${sp[c]}`).join(" · ")}`);
+    }
+    if (ds.act === "share-nights") {
+      const url = `${location.origin}${location.pathname}?nights=${splitStr(state.split)}`;
+      const fallback = () => prompt("Copy this link:", url);
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(() => flash("Link copied ✓"), fallback); else fallback();
+      return;
+    }
+    if (ds.act === "open-nights") { ui.nightsOpen = true; go("overview"); const box = document.getElementById("nightsBox"); if (box) box.scrollIntoView({ block: "center" }); return; }
     if (ds.edit) { ui.editing = ds.edit; return render(); }
     if (ds.del) {
       const f = findAct(ds.del); if (!f || !confirm(`Delete "${f.a.title}"?`)) return;
@@ -1072,13 +1371,16 @@
     if (ds.done) { const f = findAct(ds.done); if (f) { f.a.done = t.checked; save(); render(); } return; }
     if (t.id === "hideDone") { ui.hideDone = t.checked; return render(); }
     if (t.id === "previewDate") { ui.today = t.value || null; return render(); }
-    if (ds.line) { const l = state.budgetLines.find(x => x.id === ds.line); if (l) { l.amount = Number(t.value) || 0; save(); render(); } return; }
+    if (ds.line) { const l = state.budgetLines.find(x => x.id === ds.line); if (l) { l.amount = Number(t.value) || 0; if (l.basis) { const n = planUnits(state)[l.basis]; if (n) l.rate = l.amount / n; } save(); render(); } return; }
     if (ds.pack) { const [g, id] = ds.pack.split("|"); const it = state.packing[g].find(i => i.id === id); if (it) { it.done = t.checked; save(); render(); } return; }
     if (ds.dcheck !== undefined) { state.driveChecks[ds.dcheck] = t.checked; save(); return; }
     if (ds.lugsel) { state.luggage[ds.lugsel] = t.value; syncStorageBudget(); save(true); return render(); }
     if (ds.lugnum) { state.luggage[ds.lugnum] = Math.max(0, Number(t.value) || 0); syncStorageBudget(); save(true); return render(); }
     if (ds.dvf) { state.dvf[ds.dvf] = Math.max(0, Number(t.value) || 0); save(true); const open = true; render(); const d = document.querySelector(".dvf-inputs"); if (d) d.open = open; return; }
   });
+
+  // <details> toggles don't bubble; remember whether the nights editor is open across re-renders
+  document.addEventListener("toggle", e => { if (e.target.id === "nightsBox") ui.nightsOpen = e.target.open; }, true);
 
   document.addEventListener("input", e => {
     if (["fKm", "fCons", "fPrice"].includes(e.target.id)) { if (e.target.id === "fKm") ui.fuelKm = Number(e.target.value) || 0; updateFuel(); }
@@ -1089,7 +1391,7 @@
     if (f.id === "addForm") {
       const v = readForm(f); if (!v.title) return;
       const day = state.itinerary.find(d => d.date === v.date); if (!day) return;
-      const { date, ...rest } = v; day.activities.push({ id: uid(), done: false, transport: "", ...rest });
+      const { date, ...rest } = v; day.activities.push({ id: uid(), done: false, transport: "", custom: true, ...rest });
       ui.showAdd = false; save(); render(); flash("Added ✓"); return;
     }
     if (f.dataset.editform) {
@@ -1127,7 +1429,7 @@
       try {
         const s = JSON.parse(r.result);
         if (!s || !Array.isArray(s.itinerary)) throw new Error("No itinerary array");
-        state = s.version === 2 ? { ...defaults(), ...s } : migrate(s); save(); render(); flash("Imported ✓");
+        state = fromSaved(s); save(); render(); flash("Imported ✓");
       } catch (err) { alert("Couldn't import this file: " + err.message); }
       e.target.value = "";
     };
@@ -1152,7 +1454,20 @@
   if (sub) ui.intel = sub;
   const setTopH = () => document.documentElement.style.setProperty("--top-h", $(".top").offsetHeight + "px");
   setTopH(); addEventListener("resize", setTopH);
+  // A shared link (?nights=4-3-4) opens that split, then the parameter is removed
+  const params = new URLSearchParams(location.search);
+  if (params.has("nights")) {
+    const shared = parseSplit(params.get("nights"));
+    if (shared && !sameSplit(shared, state.split)) {
+      applySplit(shared); migrated = false;
+      setTimeout(() => flash(`Opened a shared plan: ${SPLIT.order.map(c => `${c} ${shared[c]}`).join(" · ")}`), 300);
+    }
+    params.delete("nights");
+    history.replaceState(null, "", location.pathname + (params.toString() ? "?" + params : "") + location.hash);
+  }
+  if (migrated) setTimeout(() => flash("Plan updated to the latest version. Your ticks are kept ✓"), 300);
   syncStorageBudget();
+  save(true);
   renderCredits();
   render();
   refreshLiveWx();
