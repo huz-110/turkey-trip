@@ -37,11 +37,11 @@ const CITIES = {
    Stops are where you sleep (from = check-in, to = check-out date). */
 const ROUTE = [
   { type: "leg", date: "2026-11-04", icon: "✈️", text: "Fly to Antalya (change in Istanbul)" },
-  { type: "stop", city: "Antalya", from: "2026-11-04", to: "2026-11-07", wx: "antalya", blurb: "Old town, sea cliffs and waterfalls, mountain cable car" },
-  { type: "leg", date: "2026-11-07", icon: "🚗", text: "Drive to Cappadocia, 530 km via Konya" },
-  { type: "stop", city: "Cappadocia", from: "2026-11-07", to: "2026-11-10", wx: "goreme", blurb: "Hot-air balloons, cave hotel, horse riding, underground city" },
-  { type: "leg", date: "2026-11-10", icon: "🚗", text: "Drive to Istanbul, 730 km (or fly)" },
-  { type: "stop", city: "Istanbul", from: "2026-11-10", to: "2026-11-15", wx: "istanbul", blurb: "Palaces and mosques, Bosphorus ferry, bazaar shopping" },
+  { type: "stop", city: "Antalya", from: "2026-11-04", to: "2026-11-08", wx: "antalya", blurb: "Old town, sea cliffs and waterfalls, mountain cable car, Roman ruins" },
+  { type: "leg", date: "2026-11-08", icon: "🚗", text: "Drive to Cappadocia, 530 km via Konya" },
+  { type: "stop", city: "Cappadocia", from: "2026-11-08", to: "2026-11-11", wx: "goreme", blurb: "Hot-air balloons, cave hotel, horse riding, underground city" },
+  { type: "leg", date: "2026-11-11", icon: "🚗", text: "Drive to Istanbul, 730 km (or fly)" },
+  { type: "stop", city: "Istanbul", from: "2026-11-11", to: "2026-11-15", wx: "istanbul", blurb: "Palaces and mosques, Bosphorus ferry, bazaar shopping" },
   { type: "leg", date: "2026-11-15", icon: "✈️", text: "Fly home to Mumbai" }
 ];
 
@@ -85,20 +85,35 @@ const DEFAULT_ITINERARY = [
     stay: "Antalya apartment", transport: "Car", drive: { km: 150, hours: "2.5" },
     child: "The cable car is the highlight for the 5-year-old. The summit is near freezing, so bring jackets. Phaselis has short flat paths.",
     booking: "Olympos Teleferik: buy on the day at the base or online. Only go if the summit forecast is clear.",
-    contingency: "Summit in cloud: swap with 5 Nov. Rain: Aspendos theatre (quick) or the Aquarium.",
+    contingency: "Summit in cloud: swap with 5 Nov, or with the Aspendos day (7 Nov). Rain: the Aquarium.",
     activities: [
       { time: "09:30", title: "Drive to Olympos Teleferik (Tahtalı)", location: "Beycik, Kemer", category: "Driving", duration: "1 h 15 m", cost: 0, priority: "must", transport: "Car", notes: "Coastal D400. Check the live summit webcam before you leave." },
       { time: "11:00", title: "Olympos Teleferik to the Tahtalı summit", location: "Olympos Teleferik", category: "Adventure", duration: "2 h", cost: 13500, priority: "must", transport: "Cable car", notes: "About €41 each for 3 people. Under-6 pricing differs by source (Needs confirmation).", kids: true, img: "tahtali" },
       { time: "13:30", title: "Lunch around Tekirova or Kemer", location: "Tekirova", category: "Food", duration: "1 h", cost: 3500, priority: "good", transport: "Car", notes: "", img: "f_gerashi" },
       { time: "15:00", title: "Phaselis ancient city + pine-shaded coves", location: "Phaselis, Kemer", category: "Sightseeing", duration: "1.5 h", cost: 2500, priority: "good", transport: "Car", notes: "Entry fee: Needs confirmation.", kids: true, img: "phaselis" },
-      { time: "19:30", title: "Dinner near the apartment, pack for the road trip", location: "Konyaaltı", category: "Food", duration: "1.5 h", cost: 4000, priority: "good", transport: "Walk", notes: "", img: "f_tavuk2" },
-      { time: "Flex", title: "Kaş day trip (instead of the cable car day)", location: "Kaş", category: "Driving", duration: "10 h", cost: 6000, priority: "optional", transport: "Car", notes: "187 km, about 2 h 40 m each way. Beautiful, but a 5+ h round trip the day before a 7 h drive. Not recommended.", img: "kas" }
+      { time: "19:30", title: "Dinner near the apartment", location: "Konyaaltı", category: "Food", duration: "1.5 h", cost: 4000, priority: "good", transport: "Walk", notes: "", img: "f_tavuk2" },
+      { time: "Flex", title: "Kaş day trip (instead of the cable car day)", location: "Kaş", category: "Driving", duration: "10 h", cost: 6000, priority: "optional", transport: "Car", notes: "187 km, about 2 h 40 m each way. Beautiful, but a long round trip. Not recommended.", img: "kas" }
     ]
   },
   {
-    date: "2026-11-07", city: "Road trip", title: "Antalya to Konya to Göreme", img: "drive_road", wx: ["antalya", "konya", "goreme"],
+    date: "2026-11-07", city: "Antalya", title: "Aspendos theatre and Perge ruins", img: "aspendos", wx: ["antalya"],
+    stay: "Antalya apartment", transport: "Car", drive: { km: 90, hours: "1.5" },
+    child: "Big open ruins with room to run. The Aspendos theatre's acoustics are the fun part for a 5-year-old: clap and listen to the echo. Bring hats and water, there's little shade.",
+    booking: "None. Buy both tickets at the gate.",
+    contingency: "This is also the rain/cloud backup for the Olympos Teleferik day (6 Nov): swap the two if the cable car forecast is bad.",
+    activities: [
+      { time: "09:30", title: "Drive east to Aspendos", location: "Serik, Antalya", category: "Driving", duration: "45 min", cost: 0, priority: "must", transport: "Car", notes: "D400 then inland, well signed. 47 km from Konyaaltı." },
+      { time: "10:30", title: "Aspendos Roman theatre (best-preserved in the world)", location: "Aspendos", category: "Sightseeing", duration: "1 h", cost: 1650, priority: "must", transport: "Car", notes: "About €15 each for 3 (incl. the 13-year-old). Under-8s free. (Traveller-reported)", kids: true, img: "aspendos" },
+      { time: "12:00", title: "Perge ancient city: colonnaded street, stadium, theatre", location: "Perge, Aksu", category: "Sightseeing", duration: "1 h", cost: 1200, priority: "good", transport: "Car", notes: "About €11 each for 3. Less shade than Aspendos, so don't linger past midday. (Traveller-reported)", kids: true },
+      { time: "13:30", title: "Lunch on the way back into Antalya", location: "Aksu / Lara", category: "Food", duration: "1 h", cost: 3000, priority: "good", transport: "Car", notes: "", img: "f_adana3" },
+      { time: "16:00", title: "Relaxed afternoon: Konyaaltı beach and Beach Park", location: "Konyaaltı", category: "Rest", duration: "2.5 h", cost: 0, priority: "good", transport: "Car", notes: "A slower finish before tomorrow's long drive. The Aquarium is here too if anyone wants indoors.", kids: true, img: "s_konyaalti" },
+      { time: "19:30", title: "Dinner: Arma Restaurant (harbour) or Parlak Restaurant", location: "Kaleiçi", category: "Food", duration: "1.5 h", cost: 4500, priority: "good", transport: "Car", notes: "Pack for tomorrow's road trip tonight.", img: "f_fish" }
+    ]
+  },
+  {
+    date: "2026-11-08", city: "Road trip", title: "Antalya to Konya to Göreme", img: "drive_road", wx: ["antalya", "konya", "goreme"],
     stay: "Cappadocia cave hotel", transport: "Car", drive: { km: 530, hours: "6.5-7 (+ stops)" },
-    child: "Split the drive into chunks of about 2 h. The Konya lunch is the long break. Sunset in Göreme is around 17:34.",
+    child: "Split the drive into chunks of about 2 h. The Konya lunch is the long break. Sunset in Göreme is around 17:33.",
     booking: "None. Check the mountain-pass weather the night before.",
     contingency: "Snow or fog on the Taurus pass: leave later, or stay overnight in Konya if tired.",
     activities: [
@@ -110,54 +125,55 @@ const DEFAULT_ITINERARY = [
     ]
   },
   {
-    date: "2026-11-08", city: "Cappadocia", title: "Balloon try #1, open-air museum, sunset horses", img: "d08", wx: ["goreme"],
+    date: "2026-11-09", city: "Cappadocia", title: "Balloon try #1, open-air museum, sunset horses", img: "d08", wx: ["goreme"],
     stay: "Cappadocia cave hotel", transport: "Car + operator transfers", drive: { km: 25, hours: "0.5" },
     child: "Kids sleep in while the adults fly (tell reception). Horse riding is at sunset, so no early start for the kids.",
-    booking: "BALLOON: book for 8 Nov. If it's cancelled, the operator moves you to 9 or 10 Nov. Horse riding: book 1-2 days ahead.",
-    contingency: "Balloon cancelled (25-35% of November mornings): watch the launch from a terrace and rebook for 9 Nov.",
+    booking: "BALLOON: book for 9 Nov. If it's cancelled, the operator moves you to 10 or 11 Nov. Horse riding: book 1-2 days ahead.",
+    contingency: "Balloon cancelled (25-35% of November mornings): watch the launch from a terrace and rebook for 10 Nov.",
     activities: [
-      { time: "05:45", title: "Hot-air balloon (2 adults)", location: "Göreme valleys", category: "Adventure", duration: "3.5 h incl. transfers", cost: 42000, priority: "must", transport: "Operator shuttle", notes: "Sunrise is about 07:12, and pickup is about 1.5 h before. Standard shared basket €150-220 each (Estimated). The 5-year-old can't fly (minimum age 6 at most operators). The 13-year-old CAN.", img: "hero" },
+      { time: "05:45", title: "Hot-air balloon (2 adults)", location: "Göreme valleys", category: "Adventure", duration: "3.5 h incl. transfers", cost: 42000, priority: "must", transport: "Operator shuttle", notes: "Sunrise is about 07:14, and pickup is about 1.5 h before. Standard shared basket €150-220 each (Estimated). The 5-year-old can't fly (minimum age 6 at most operators). The 13-year-old CAN.", img: "hero" },
       { time: "10:30", title: "Göreme Open-Air Museum (rock-cut churches)", location: "Göreme", category: "Sightseeing", duration: "1.5 h", cost: 6600, priority: "good", transport: "Car", notes: "€20 per adult or teen. Under-8s free at state museums (Verified). The Dark Church is +€6.", img: "goreme_oam" },
       { time: "13:00", title: "Lunch: Nazar Börek or Aysel'in Mutfağı", location: "Göreme", category: "Food", duration: "1 h", cost: 3500, priority: "good", transport: "Walk", notes: "", kids: true, img: "f_tavukdoner" },
       { time: "14:00", title: "Rest at the hotel", location: "Hotel", category: "Rest", duration: "2 h", cost: 0, priority: "must", transport: "Flex", notes: "Very important after the early start." },
-      { time: "16:00", title: "Sunset horse riding: Rose / Red Valley (1 h)", location: "Çavuşin / Göreme ranch", category: "Adventure", duration: "1.5 h", cost: 16000, priority: "must", transport: "Operator transfer", notes: "Sunset is about 17:33. The 5-year-old will likely ride a led pony or ride with a guide. Confirm the ranch's minimum age.", kids: true, img: "horse" },
+      { time: "16:00", title: "Sunset horse riding: Rose / Red Valley (1 h)", location: "Çavuşin / Göreme ranch", category: "Adventure", duration: "1.5 h", cost: 16000, priority: "must", transport: "Operator transfer", notes: "Sunset is about 17:32. The 5-year-old will likely ride a led pony or ride with a guide. Confirm the ranch's minimum age.", kids: true, img: "horse" },
       { time: "19:30", title: "Dinner: Topdeck Cave or Oscar Steak House", location: "Göreme", category: "Food", duration: "1.5 h", cost: 4500, priority: "good", transport: "Walk", notes: "", img: "f_ocakbasi" }
     ]
   },
   {
-    date: "2026-11-09", city: "Cappadocia", title: "Underground city, pottery, Uçhisar sunset", img: "d09", wx: ["goreme"],
+    date: "2026-11-10", city: "Cappadocia", title: "Underground city, pottery, Uçhisar sunset", img: "d09", wx: ["goreme"],
     stay: "Cappadocia cave hotel", transport: "Car", drive: { km: 70, hours: "1.5" },
     child: "Kaymaklı has low tunnels. Fine for kids, but hold the 5-year-old's hand on the steep steps. Pottery is the 13-year-old's creative hour.",
-    booking: "Balloon backup morning (automatic if 8 Nov was cancelled). Pottery class: book the day before.",
+    booking: "Balloon backup morning (automatic if 9 Nov was cancelled). Pottery class: book the day before.",
     contingency: "Rain or cold: the underground city and pottery are both indoors, so today is weatherproof.",
     activities: [
-      { time: "05:45", title: "Balloon backup slot (only if 8 Nov was cancelled)", location: "Göreme", category: "Adventure", duration: "3.5 h", cost: 0, priority: "optional", transport: "Operator shuttle", notes: "Price already counted on 8 Nov.", img: "balloon2" },
+      { time: "05:45", title: "Balloon backup slot (only if 9 Nov was cancelled)", location: "Göreme", category: "Adventure", duration: "3.5 h", cost: 0, priority: "optional", transport: "Operator shuttle", notes: "Price already counted on 9 Nov.", img: "balloon2" },
+      { time: "09:05", title: "10 November: Atatürk memorial siren", location: "En route to Kaymaklı", category: "Driving", duration: "2 min", cost: 0, priority: "must", transport: "Car", notes: "Sirens sound nationwide at 09:05 and many drivers stop. Pull over safely and don't overtake stopped cars." },
       { time: "10:00", title: "Kaymaklı Underground City", location: "Kaymaklı (20 km)", category: "Sightseeing", duration: "1.5 h", cost: 4300, priority: "must", transport: "Car", notes: "About €13 each for 3 people. Derinkuyu is deeper and more cramped. Kaymaklı is easier with a 5-year-old.", kids: true, img: "kaymakli" },
       { time: "12:30", title: "Lunch: Old Cappadocia or Turkish Ravioli (mantı)", location: "Göreme", category: "Food", duration: "1 h", cost: 3000, priority: "good", transport: "Car", notes: "", img: "f_shish2" },
       { time: "14:30", title: "Avanos pottery workshop (hands-on wheel)", location: "Avanos", category: "Kids", duration: "1.5 h", cost: 6000, priority: "good", transport: "Car", notes: "Book a class, not a 'free demo'. Those end in a shop sales pitch (Traveller-reported).", kids: true, img: "pottery" },
-      { time: "17:00", title: "Sunset at the Uçhisar Castle area / Pigeon Valley viewpoint", location: "Uçhisar", category: "Sightseeing", duration: "1 h", cost: 0, priority: "must", transport: "Car", notes: "Sunset is about 17:32. The viewpoints are free. The castle climb fee is small (Needs confirmation).", kids: true, img: "s_uchisar" },
+      { time: "17:00", title: "Sunset at the Uçhisar Castle area / Pigeon Valley viewpoint", location: "Uçhisar", category: "Sightseeing", duration: "1 h", cost: 0, priority: "must", transport: "Car", notes: "Sunset is about 17:31. The viewpoints are free. The castle climb fee is small (Needs confirmation).", kids: true, img: "s_uchisar" },
       { time: "19:30", title: "Dinner: İnci Cave or Seten", location: "Göreme", category: "Food", duration: "1.5 h", cost: 4500, priority: "good", transport: "Walk", notes: "", img: "f_lambshish2" },
       { time: "Flex", title: "Sunset ATV / quad (13-year-old + adult)", location: "Göreme", category: "Adventure", duration: "2 h", cost: 7000, priority: "optional", transport: "Operator", notes: "Kids ride as passengers. Dusty and cold in November.", img: "atv" }
     ]
   },
   {
-    date: "2026-11-10", city: "Road trip", title: "Göreme to Istanbul (the long one)", img: "d10", wx: ["goreme", "ankara", "istanbul"],
+    date: "2026-11-11", city: "Road trip", title: "Göreme to Istanbul (the long one)", img: "d10", wx: ["goreme", "ankara", "istanbul"],
     stay: "Istanbul apartment", transport: "Car (or fly: see Drive vs Fly in Logistics)", drive: { km: 730, hours: "8-9 (+ stops)" },
     child: "The hardest day of the trip, and about 9 h in the booster. Tuz Gölü salt lake is a great leg-stretch. Flying instead is compared in Logistics.",
-    booking: "Only if you stored a bag: collect it at IST Left Luggage on the way in.",
+    booking: "Pre-book the car return appointment. If you stored a bag: collect it at IST Left Luggage on the way in.",
     contingency: "Too tired: stop overnight in Ankara (costs one Istanbul night). Fog on the Bolu mountain section: slow down and use dipped lights.",
     activities: [
       { time: "07:15", title: "Watch the balloons launch from the hotel terrace, then check out", location: "Hotel terrace", category: "Sightseeing", duration: "45 min", cost: 0, priority: "good", transport: "Flex", notes: "Free, and the best view of the balloons is from the ground.", kids: true, img: "balloon2" },
-      { time: "09:05", title: "10 November: Atatürk memorial siren", location: "On the road", category: "Driving", duration: "2 min", cost: 0, priority: "must", transport: "Car", notes: "Sirens sound at 09:05 and many drivers stop. Slow down safely and don't overtake stopped cars." },
       { time: "11:00", title: "Tuz Gölü (Salt Lake) stop", location: "Near Şereflikoçhisar", category: "Kids", duration: "45 min", cost: 0, priority: "good", transport: "Car", notes: "Walk out on the white salt crust. Bring wipes for shoes.", kids: true, img: "d10" },
       { time: "13:30", title: "Lunch on the Ankara ring road / highway services", location: "Ankara", category: "Food", duration: "1 h", cost: 3000, priority: "must", transport: "Car", notes: "", img: "f_doner" },
       { time: "18:30", title: "Collect a stored bag at IST (only if you stored one)", location: "IST Left Luggage", category: "Transport", duration: "45 min", cost: 0, priority: "optional", transport: "Car", notes: "Short-term car park. One adult runs in." },
-      { time: "20:00", title: "Dinner: Bayramoğlu Döner (Beykoz, Asian side) or Beyti (Florya)", location: "On route", category: "Food", duration: "1 h", cost: 3500, priority: "optional", transport: "Car", notes: "Whichever fits your route. Or order in.", img: "f_beyti" }
+      { time: "19:15", title: "Return the rental car", location: "Istanbul office / IST", category: "Driving", duration: "45 min", cost: 0, priority: "must", transport: "Car", notes: "Fill the tank first (full-to-full) and keep the receipt. No car trip is planned in Istanbul this time, so there's no reason to keep it longer." },
+      { time: "20:00", title: "Dinner: Bayramoğlu Döner (Beykoz, Asian side) or Beyti (Florya)", location: "On route", category: "Food", duration: "1 h", cost: 3500, priority: "optional", transport: "Taxi", notes: "Whichever fits your route. Or order in.", img: "f_beyti" }
     ]
   },
   {
-    date: "2026-11-11", city: "Istanbul", title: "Sultanahmet: Hagia Sophia and the Blue Mosque", img: "d11", wx: ["istanbul"],
-    stay: "Istanbul apartment", transport: "T1 tram + walking (car parked)", drive: { km: 0, hours: "0" },
+    date: "2026-11-12", city: "Istanbul", title: "Sultanahmet: Hagia Sophia and the Blue Mosque", img: "d11", wx: ["istanbul"],
+    stay: "Istanbul apartment", transport: "T1 tram + walking", drive: { km: 0, hours: "0" },
     child: "Morning visit before the crowds. Headscarves for the women, shoes off in mosques. Turkish delight at Hafız Mustafa.",
     booking: "Hagia Sophia: buy the visitor-gallery ticket online. Plan around prayer times.",
     contingency: "Rain: the Basilica Cistern and Hagia Sophia are both indoors.",
@@ -169,21 +185,6 @@ const DEFAULT_ITINERARY = [
       { time: "15:00", title: "Rest at the apartment", location: "", category: "Rest", duration: "2 h", cost: 0, priority: "must", transport: "Tram", notes: "" },
       { time: "19:00", title: "Dessert at Hafız Mustafa 1864 + evening stroll", location: "Sirkeci / Sultanahmet", category: "Food", duration: "1 h", cost: 1500, priority: "good", transport: "Tram", notes: "", kids: true, img: "f_baklava" },
       { time: "20:00", title: "Dinner near the apartment", location: "", category: "Food", duration: "1.5 h", cost: 4500, priority: "good", transport: "Walk", notes: "", img: "f_adana3" }
-    ]
-  },
-  {
-    date: "2026-11-12", city: "Istanbul", title: "Car day: Sapanca and Maşukiye (lake + forest)", img: "d12", wx: ["istanbul", "sapanca"],
-    stay: "Istanbul apartment", transport: "Car (returned in the evening)", drive: { km: 300, hours: "4 (round trip)" },
-    child: "Streams, forest and open space to run around after two city days. Trout and grills in Maşukiye.",
-    booking: "Car return slot (evening) at the agreed Istanbul office or IST.",
-    contingency: "Heavy rain: swap for an Istanbul museum day and return the car in the morning.",
-    activities: [
-      { time: "09:00", title: "Drive to Sapanca Lake", location: "Sapanca, Sakarya", category: "Driving", duration: "1.5-2 h", cost: 0, priority: "must", transport: "Car", notes: "Leave after 09:00 to miss the worst rush hour. Motorway tolls are in the budget lines." },
-      { time: "11:00", title: "Lakeside promenade + cafés", location: "Sapanca", category: "Sightseeing", duration: "1.5 h", cost: 0, priority: "must", transport: "Walk", notes: "", kids: true, img: "d12" },
-      { time: "13:00", title: "Lunch by the stream: Maşukiye grills and trout", location: "Maşukiye, Kartepe", category: "Food", duration: "1.5 h", cost: 4000, priority: "must", transport: "Car", notes: "Many places here are cash-friendly. Carry ₺.", kids: true, img: "f_shish" },
-      { time: "14:45", title: "Zipline / nature park (13-year-old)", location: "Maşukiye", category: "Adventure", duration: "1 h", cost: 3000, priority: "optional", transport: "Walk", notes: "Operators and ages: Needs confirmation." },
-      { time: "18:30", title: "Return the rental car", location: "Istanbul office / IST", category: "Driving", duration: "1 h", cost: 0, priority: "must", transport: "Car", notes: "Fill the tank first (full-to-full) and keep the receipt." },
-      { time: "20:00", title: "Dinner near the apartment", location: "", category: "Food", duration: "1.5 h", cost: 4000, priority: "good", transport: "Walk", notes: "", img: "f_copkebab" }
     ]
   },
   {
@@ -234,11 +235,11 @@ const DEFAULT_BUDGET_LINES = [
   { id: "b2", label: "Domestic flight IST-AYT x4", group: "Flights", amount: 28000, status: "Estimated", note: "" },
   { id: "b3", label: "Turkey visas x4 (VFS / e-Visa)", group: "Documents", amount: 25000, status: "Needs confirmation", note: "Indian passports: e-Visa only with a valid US/UK/Schengen/Irish visa or residence permit. Otherwise a sticker visa via VFS." },
   { id: "b4", label: "Travel insurance (family)", group: "Documents", amount: 8000, status: "Estimated", note: "" },
-  { id: "b5", label: "Antalya apartment, 3 nights", group: "Stay", amount: 45000, status: "Estimated", note: "About ₹15k/night for a Konyaaltı 2-bedroom." },
+  { id: "b5", label: "Antalya apartment, 4 nights", group: "Stay", amount: 60000, status: "Estimated", note: "About ₹15k/night for a Konyaaltı 2-bedroom." },
   { id: "b6", label: "Cappadocia cave hotel, 3 nights", group: "Stay", amount: 60000, status: "Estimated", note: "About ₹20k/night for a family room with a terrace." },
-  { id: "b7", label: "Istanbul apartment, 5 nights", group: "Stay", amount: 87500, status: "Estimated", note: "Your ₹17.5k/night target." },
-  { id: "b8", label: "Rental car, 8 days + one-way fee + full cover", group: "Car", amount: 60000, status: "Estimated", note: "The one-way AYT to IST fee is quoted at booking. Compare suppliers." },
-  { id: "b9", label: "Fuel (about 2,000 km, petrol)", group: "Car", amount: 22300, status: "Estimated", note: "140 L at ₺81 (Kurşunsuz 95, Sep 2026)." },
+  { id: "b7", label: "Istanbul apartment, 4 nights", group: "Stay", amount: 70000, status: "Estimated", note: "Your ₹17.5k/night target." },
+  { id: "b8", label: "Rental car, 7 days + one-way fee + full cover", group: "Car", amount: 52500, status: "Estimated", note: "The one-way AYT to IST fee is quoted at booking. Compare suppliers. Returned on arrival in Istanbul (no Sapanca day this cut)." },
+  { id: "b9", label: "Fuel (about 1,700 km, petrol)", group: "Car", amount: 19000, status: "Estimated", note: "119 L at ₺81 (Kurşunsuz 95, Sep 2026)." },
   { id: "b10", label: "Tolls (HGS, billed by the rental company)", group: "Car", amount: 5000, status: "Estimated", note: "Istanbul-Ankara ₺338, Kuzey Marmara Anadolu ₺600, Yavuz Sultan Selim Bridge ₺110, Kuzey Marmara Avrupa about ₺260." },
   { id: "b11", label: "Parking", group: "Car", amount: 5000, status: "Estimated", note: "" },
   { id: "b12", label: "Luggage storage (from the Luggage planner)", group: "Logistics", amount: 0, status: "Estimated", note: "Updates automatically when you change the Luggage planner." },
@@ -254,29 +255,29 @@ const DECISIONS = [
   {
     topic: "Luggage (revised after your note)", img: "money_bazaar",
     mine: "Store 1-2 large bags in Istanbul on arrival and travel light.",
-    finding: "You're carrying 2 large, 3 small and 2 backpacks. Storing 1 large leaves one large bag for 4 people for 6 nights, including cold Cappadocia, which is too tight. All 7 pieces fit a C-sedan boot (about 510 L) with the backpacks at your feet (Estimated). Bags only get heavier after the Istanbul shopping, which happens at the end anyway.",
+    finding: "You're carrying 2 large, 3 small and 2 backpacks. Storing 1 large leaves one large bag for 4 people for 7 nights, including cold Cappadocia, which is too tight. All 7 pieces fit a C-sedan boot (about 510 L) with the backpacks at your feet (Estimated). Bags only get heavier after the Istanbul shopping, which happens at the end anyway.",
     rec: "Carry everything. Book a C-sedan or mid SUV and pack a foldable duffel for the shopping. Use the Luggage planner to test other mixes.",
     why: "No storage fees, no airport detour, and a full wardrobe for Cappadocia. The only real cost is carrying more up hotel stairs."
   },
   {
     topic: "Cappadocia to Istanbul: drive or fly?", img: "drive_motorway",
-    mine: "Drive 730 km on 10 Nov, keep the car in Istanbul for 1-2 days.",
-    finding: "The drive day alone costs about ₹15k (rental ₹4.5k, fuel ₹8.1k, tolls ₹2.6k). Flying NAV/ASR to IST costs about ₹30k (4 TK tickets plus a minivan to the city). Flying also means you don't pay for the car sitting idle on 11 Nov, so the like-for-like gap is about ₹10-12k (Estimated).",
-    rec: "Fly (Plan C): drop the car at Nevşehir or Kayseri airport and fly Turkish Airlines to IST. Hire a car for 12 Nov only, or book a driver for Sapanca.",
-    why: "For about ₹10-12k more you swap roughly 9 h of driving (and 9 h of booster time for your 5-year-old) for a 1 h 20 m flight. You arrive fresh with an extra evening in Istanbul. If budget matters most, driving is the cheaper option."
+    mine: "Drive 730 km on 11 Nov, return the car the same evening.",
+    finding: "The drive day alone costs about ₹15k (rental ₹4.5k, fuel ₹8.1k, tolls ₹2.6k). Flying NAV/ASR to IST costs about ₹30k (4 TK tickets plus a minivan to the city). With Sapanca dropped from the trip, neither plan needs a car in Istanbul itself, so it's a clean like-for-like comparison (Estimated).",
+    rec: "Fly (Plan C): drop the car at Nevşehir or Kayseri airport and fly Turkish Airlines to IST.",
+    why: "For a similar premium you swap roughly 9 h of driving (and 9 h of booster time for your 5-year-old) for a 1 h 20 m flight. You arrive fresh with an extra evening in Istanbul. If budget matters most, driving is the cheaper option."
   },
   {
     topic: "Antalya excursions", img: "kas",
     mine: "Try to fit Pamukkale and Kaş.",
-    finding: "You land at 23:30, so there are 2 usable days in Antalya. Pamukkale is about 240 km (3-4 h each way) in the wrong direction. Kaş is 187 km (about 2 h 40 m each way). The city's Tünektepe cable car has been closed since the April 2024 accident, with no reopening date (Traveller-reported).",
-    rec: "Skip Pamukkale. Kaş is optional. Use Olympos Teleferik for the cable car, plus Phaselis and Kaleiçi.",
-    why: "Two 7-hour round trips back to back with a 7-hour drive would break the relaxed pace."
+    finding: "You land at 23:30, so there are 3 usable days in Antalya. Pamukkale is about 240 km (3-4 h each way) in the wrong direction. Kaş is 187 km (about 2 h 40 m each way). The city's Tünektepe cable car has been closed since the April 2024 accident, with no reopening date (Traveller-reported).",
+    rec: "Skip Pamukkale. Kaş is optional. Use Olympos Teleferik for the cable car, Phaselis and Kaleiçi, plus the extra day at Aspendos and Perge.",
+    why: "Two 7-hour round trips back to back with a 7-hour drive would break the relaxed pace, but the third day gives room for a quieter ruins-and-beach day instead."
   },
   {
     topic: "Cappadocia balloon", img: "hero",
     mine: "Balloon for 2 adults.",
     finding: "25-35% of November mornings are cancelled (Traveller-reported). Most operators set the minimum age at 6. Your 13-year-old is eligible.",
-    rec: "Book the first morning (8 Nov). The operator can move you to 9 or 10 Nov.",
+    rec: "Book the first morning (9 Nov). The operator can move you to 10 or 11 Nov.",
     why: "Three chances bring the odds of at least one flight to about 95% (Estimated)."
   },
   {
@@ -301,16 +302,14 @@ const DECISIONS = [
 const DRIVE_VS_FLY = {
   inputs: {
     km: 730, cons: 7.0, fuelTRY: 81, rentalDayINR: 4500,
-    tollsTRY: 1308, idleExtraINR: 6000,
-    ticketINR: 6500, people: 4, bagFeeINR: 2300, airportDriveKm: 60, transferINR: 3500,
-    istRentalDayINR: 5500
+    tollsTRY: 1308,
+    ticketINR: 6500, people: 4, bagFeeINR: 2300, airportDriveKm: 60, transferINR: 3500
   },
   notes: {
     tolls: "O-4 Istanbul-Ankara ₺338 + Kuzey Marmara Anadolu ₺600 + Yavuz Sultan Selim Bridge ₺110 + Kuzey Marmara Avrupa to IST about ₺260 (2026 tariffs, route-dependent).",
-    idle: "On Plan A the car sits parked on 11 Nov: one rental day (about ₹4.5k) + a night of paid parking (about ₹1.5k).",
     ticket: "TK Nevşehir (NAV) or Kayseri (ASR) to IST one-way, about $55-80 per person (Estimated). AJet/Pegasus from about $30, but they land at SAW (Asian side) and charge for bags.",
     bags: "TK domestic EcoFly allows 15 kg checked per person. Excess costs ₺390 per 3 kg. Pooling on one booking: Needs confirmation.",
-    ist: "Plan C still needs a car for the Sapanca day: a 1-day Istanbul rental. Fuel and tolls for Sapanca are the same on both plans."
+    ist: "Neither plan needs a car in Istanbul itself: with Sapanca dropped from this cut of the trip, every remaining sight is on the tram, ferry or on foot."
   },
   time: { drive: "8-9 h driving, about 10.5 h door to door", fly: "About 6 h door to door, 1 h 20 m in the air" }
 };
@@ -348,7 +347,7 @@ const RESTAURANTS = [
   { city: "Cappadocia", name: "Old Cappadocia", area: "Göreme, İçeridere", cuisine: "Regional, beef pottery kebab", g: [4.5, 3230], ta: [4.5, 2070], price: "₹₹", kids: "Has a vegetarian testi kebab too.", alcohol: "Needs confirmation", why: "Reliable.", img: "f_testi" },
   { city: "Cappadocia", name: "Millocal", area: "Uçhisar", cuisine: "Modern Turkish", g: [4.3, 2812], ta: [4.4, 662], price: "₹₹₹", kids: "Elegant setting.", alcohol: "Serves alcohol (Traveller-reported)", why: "If you stay in Uçhisar.", img: "f_pirzola2" },
   { city: "Istanbul", name: "Beyti", area: "Florya (airport side)", cuisine: "Legendary kebab house", g: [4.6, 5054], ta: [4.5, 813], price: "₹₹₹", kids: "Grilled chicken, pilav.", alcohol: "Needs confirmation", why: "Birthplace of the Beyti kebab. Handy on an airport day.", img: "f_beyti" },
-  { city: "Istanbul", name: "Bayramoğlu Döner", area: "Beykoz (Asian side)", cuisine: "Döner specialist", g: [4.5, 30126], ta: [4.5, 753], price: "₹₹", kids: "Döner plate with rice and fries.", alcohol: "Unlikely", why: "30k+ Google reviews. Near the Kuzey Marmara route on 10 Nov.", img: "f_donerspit" },
+  { city: "Istanbul", name: "Bayramoğlu Döner", area: "Beykoz (Asian side)", cuisine: "Döner specialist", g: [4.5, 30126], ta: [4.5, 753], price: "₹₹", kids: "Döner plate with rice and fries.", alcohol: "Unlikely", why: "30k+ Google reviews. Near the Kuzey Marmara route on 11 Nov.", img: "f_donerspit" },
   { city: "Istanbul", name: "Matbah", area: "Sultanahmet", cuisine: "Ottoman palace cuisine", g: [4.5, 1377], ta: [4.5, 1896], price: "₹₹₹", kids: "Mild rice and meat dishes.", alcohol: "Needs confirmation", why: "Best-rated sit-down on the Hagia Sophia day.", img: "f_islim" },
   { city: "Istanbul", name: "Cafe Privato", area: "Galata", cuisine: "Turkish breakfast, home cooking", g: [4.4, 2596], ta: [4.5, 987], price: "₹₹", kids: "Big village breakfast spread.", alcohol: "Needs confirmation", why: "A great breakfast before Galata.", img: "f_breakfast" },
   { city: "Istanbul", name: "Yeni Lokanta", area: "Beyoğlu", cuisine: "Modern Anatolian", g: [4.8, 2528], ta: [4.5, 568], price: "₹₹₹₹", kids: "Upscale, better for adults.", alcohol: "Serves alcohol", why: "Top-rated farewell splurge.", img: "f_pirzola3" },
@@ -368,7 +367,7 @@ const SWEETS = [
       { n: "Hafız Mustafa 1864", a: "Sirkeci / Sultanahmet", g: [4.7, 47271], ta: [4.5, 7407] },
       { n: "Baklavacı Diyar Usta", a: "Sirkeci", g: [4.8, 1285] }
     ],
-    plan: "Karaköy Güllüoğlu is steps from the recommended Karaköy base. Hafız Mustafa is already in the plan on 11 Nov." },
+    plan: "Karaköy Güllüoğlu is steps from the recommended Karaköy base. Hafız Mustafa is already in the plan on 12 Nov." },
   { name: "Turkish delight", tr: "lokum", img: "s_lokum",
     what: "Soft, chewy cubes of starch and sugar flavoured with rose, pomegranate, lemon or packed with pistachio. Most shops let you taste first.",
     kids: "The 5-year-old favourite: soft, not too sweet, easy to eat.",
@@ -703,9 +702,8 @@ const DRIVING = {
     "Sunset is about 17:30-17:55 (Turkey stays on UTC+3). Plan to be off mountain roads by then."
   ],
   legs: [
-    { name: "Antalya to Göreme (7 Nov)", km: "about 530", time: "6.5-7 h driving", route: "Over the Taurus mountains to Konya, then D300 to Aksaray and Nevşehir", tolls: "Mostly state roads, no motorway tolls (Estimated)", stops: "Konya lunch (fırın kebabı), fuel before the pass", notes: "The pass reaches about 1,800 m. Snow is rare in early November, but check the forecast the night before." },
-    { name: "Göreme to Istanbul (10 Nov)", km: "about 730", time: "8-9 h driving", route: "Aksaray, Tuz Gölü, Ankara ring road, O-4 motorway, Kuzey Marmara motorway", tolls: "About ₺1,300: O-4 ₺338, Kuzey Marmara Anadolu ₺600, YSS Bridge ₺110, Kuzey Marmara Avrupa about ₺260", stops: "Tuz Gölü, Ankara lunch, Bolu mountain services", notes: "09:05 memorial siren. Fog is possible on the Bolu mountain section." },
-    { name: "Istanbul to Sapanca and back (12 Nov)", km: "about 300 round trip", time: "about 4 h", route: "TEM (O-4) or the Kuzey Marmara motorway", tolls: "A few hundred ₺ (Estimated)", stops: "Maşukiye", notes: "Leave after 09:00 and head back before 17:00 to miss the rush." }
+    { name: "Antalya to Göreme (8 Nov)", km: "about 530", time: "6.5-7 h driving", route: "Over the Taurus mountains to Konya, then D300 to Aksaray and Nevşehir", tolls: "Mostly state roads, no motorway tolls (Estimated)", stops: "Konya lunch (fırın kebabı), fuel before the pass", notes: "The pass reaches about 1,800 m. Snow is rare in early November, but check the forecast the night before." },
+    { name: "Göreme to Istanbul (11 Nov)", km: "about 730", time: "8-9 h driving", route: "Aksaray, Tuz Gölü, Ankara ring road, O-4 motorway, Kuzey Marmara motorway", tolls: "About ₺1,300: O-4 ₺338, Kuzey Marmara Anadolu ₺600, YSS Bridge ₺110, Kuzey Marmara Avrupa about ₺260", stops: "Tuz Gölü, Ankara lunch, Bolu mountain services", notes: "Fog is possible on the Bolu mountain section. Return the rental car on arrival." }
   ]
 };
 
@@ -717,7 +715,7 @@ const LUGGAGE_MODEL = {
     { key: "cabin",    label: "Small / cabin (20-22\")", litres: 40,  kg: 8,  storeTRY: 400, where: "cabin" },
     { key: "backpack", label: "Backpack / laptop bag / purse", litres: 22, kg: 5, storeTRY: 300, where: "feet" }
   ],
-  defaults: { have: { large: 2, medium: 0, cabin: 3, backpack: 2 }, store: { large: 0, medium: 0, cabin: 0, backpack: 0 }, car: "csedan", fare: "ecofly", days: 6, shopping: 1, pooled: true },
+  defaults: { have: { large: 2, medium: 0, cabin: 3, backpack: 2 }, store: { large: 0, medium: 0, cabin: 0, backpack: 0 }, car: "csedan", fare: "ecofly", days: 7, shopping: 1, pooled: true },
   presets: [
     { name: "Carry everything (recommended)", store: { large: 0, medium: 0, cabin: 0, backpack: 0 } },
     { name: "Store 1 large (original plan)", store: { large: 1, medium: 0, cabin: 0, backpack: 0 } },
@@ -736,7 +734,7 @@ const LUGGAGE_MODEL = {
     { key: "extrafly", label: "TK ExtraFly, 20 kg checked each", kg: 20 },
     { key: "primefly", label: "TK PrimeFly, 25 kg checked each", kg: 25 }
   ],
-  people: 4, excessTRYper3kg: 390, packEff: 0.8, nightsBeforeIstanbul: 6
+  people: 4, excessTRYper3kg: 390, packEff: 0.8, nightsBeforeIstanbul: 7
 };
 
 /* ---------- MONEY ---------- */
@@ -759,7 +757,7 @@ const MONEY = {
     "Grand Bazaar and Spice Bazaar stalls (cash often gets 10%+ off)",
     "Street food: simit, kumpir, corn, chestnuts",
     "Public toilets (₺10-20), small car parks, village stalls",
-    "Maşukiye and rural lunch stops, small Cappadocia cafés",
+    "Rural lunch stops, small Cappadocia cafés",
     "Tips: restaurants 5-10%, balloon crew, drivers",
     "Horse ranches booked on a walk-in (often cash)"
   ],
@@ -783,17 +781,17 @@ const MONEY = {
 };
 
 const CONTINGENCIES = [
-  ["Rain in Antalya", "Antalya Aquarium (Konyaaltı), Archaeological Museum, Aspendos (quick visit)."],
-  ["Balloon cancelled", "Rebook for 9 or 10 Nov (free). Watch the launch from a terrace. Full refund if every morning is cancelled, so confirm the policy when you book."],
+  ["Rain in Antalya", "Antalya Aquarium (Konyaaltı), Archaeological Museum, or swap the Aspendos/Perge day earlier."],
+  ["Balloon cancelled", "Rebook for 10 or 11 Nov (free). Watch the launch from a terrace. Full refund if every morning is cancelled, so confirm the policy when you book."],
   ["Bad Cappadocia weather", "The underground city and pottery are indoors. Move the horse ride to the clearest afternoon."],
-  ["Poor road conditions", "Delay, or stay overnight in Konya (7 Nov) or Ankara (10 Nov). Or fly Cappadocia to Istanbul."],
+  ["Poor road conditions", "Delay, or stay overnight in Konya (8 Nov) or Ankara (11 Nov). Or fly Cappadocia to Istanbul."],
   ["Rain in Istanbul", "Topkapı interiors, Dolmabahçe, Hagia Sophia, Grand Bazaar, Galataport, Basilica Cistern."]
 ];
 
 const BOOKINGS = {
   "Book now": ["Turkey visas (VFS lead time)", "International Driving Permits (RTO, India)", "International + IST-AYT flights on ONE booking", "Rental car with a high-back booster (decide Drive vs Fly first)", "Cappadocia cave hotel (terrace family rooms sell out)", "Antalya and Istanbul apartments", "Travel insurance"],
-  "Book after research": ["Balloon operator for 8 Nov (compare Klook, GYG, direct)", "Horse-riding ranch", "Topkapı / Hagia Sophia / Dolmabahçe online tickets", "NAV/ASR to IST flight if you fly", "Airport minivan for 15 Nov"],
-  "Weather dependent": ["Olympos Teleferik (clear summit)", "Balloon (operator decides at 04:00)", "Sapanca day trip", "Bosphorus ferry timing"],
+  "Book after research": ["Balloon operator for 9 Nov (compare Klook, GYG, direct)", "Horse-riding ranch", "Topkapı / Hagia Sophia / Dolmabahçe online tickets", "NAV/ASR to IST flight if you fly", "Airport minivan for 15 Nov"],
+  "Weather dependent": ["Olympos Teleferik (clear summit)", "Balloon (operator decides at 04:00)", "Bosphorus ferry timing"],
   "Decide locally": ["Restaurants", "Pottery class", "ATV", "Galata Tower / Basilica Cistern", "Kaş (optional)"]
 };
 

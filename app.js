@@ -338,8 +338,8 @@
     ${trackerPanel()}
 
     <section class="bento reveal">
-      <div class="tile t-nights">${photo("city_cappadocia", "tile-bg no-peek")}<div class="tile-in"><small>Nights</small><b>11</b><span>Antalya 3 · Cappadocia 3 · Istanbul 5</span></div></div>
-      <div class="tile t-drive c-lime"><small>Driving</small><b>${km.toLocaleString("en-IN")} km</b><span>Big days: 7 &amp; 10 Nov</span></div>
+      <div class="tile t-nights">${photo("city_cappadocia", "tile-bg no-peek")}<div class="tile-in"><small>Nights</small><b>11</b><span>Antalya 4 · Cappadocia 3 · Istanbul 4</span></div></div>
+      <div class="tile t-drive c-lime"><small>Driving</small><b>${km.toLocaleString("en-IN")} km</b><span>Big days: 8 &amp; 11 Nov</span></div>
       <div class="tile t-cost c-pink"><small>Core cost</small><b>${lakh(b.core)}</b><span>${lakh(b.all)} with optional extras</span></div>
       <div class="tile t-done c-aqua"><small>Done</small><b>${done}/${acts.length}</b><span>Tick things off in The plan</span></div>
     </section>
@@ -398,7 +398,7 @@
         <div>${statusBadge("Verified")} <b>Booster seat is the law.</b> Under 150 cm and 36 kg means a child seat. No laps. <a href="#" data-go="intel" data-intel="driving">Read the rule →</a></div>
         <div>${statusBadge("Traveller-reported")} <b>IDP is mandatory</b> for an Indian licence. Get it at your RTO before you fly.</div>
         <div>${statusBadge("Needs confirmation")} <b>Visa.</b> Indian passports get an e-Visa only with a valid US/UK/Schengen/Irish visa or residence permit. Otherwise VFS.</div>
-        <div>${statusBadge("Verified")} <b>10 Nov is Atatürk Memorial Day.</b> Sirens sound at 09:05 while you're driving.</div>
+        <div>${statusBadge("Verified")} <b>10 Nov is Atatürk Memorial Day.</b> Sirens sound at 09:05 while you're in Cappadocia.</div>
       </div>
     </section>`;
   }
@@ -780,7 +780,7 @@
             <label>₺ / litre<input id="fPrice" type="number" min="1" step="0.5" value="${D.fuel.priceTRY}"></label>
             <div class="calc-out" id="fOut"></div>
           </div>
-          <div class="chips">${[["Antalya to Göreme", 530], ["Göreme to Istanbul", 730], ["Sapanca day", 300], ["Whole trip", 2000]].map(([l, k]) => `<button class="chip" data-km="${k}">${l} · ${k} km</button>`).join("")}</div>
+          <div class="chips">${[["Antalya to Göreme", 530], ["Göreme to Istanbul", 730], ["Whole trip", 1700]].map(([l, k]) => `<button class="chip" data-km="${k}">${l} · ${k} km</button>`).join("")}</div>
         </div>
       </section>
 
@@ -823,22 +823,19 @@
     const i = state.dvf;
     const fuelTRY = i.km * i.cons / 100 * i.fuelTRY;
     const drive = [
-      ["Rental day (10 Nov)", i.rentalDayINR],
+      ["Rental day (11 Nov)", i.rentalDayINR],
       [`Fuel ${i.km} km at ${i.cons} L/100 km`, fuelTRY * FX.TRY],
-      ["Tolls (HGS)", i.tollsTRY * FX.TRY],
-      ["Car idle on 11 Nov + parking", i.idleExtraINR],
-      ["Car for the Sapanca day (same car)", i.rentalDayINR]
+      ["Tolls (HGS)", i.tollsTRY * FX.TRY]
     ];
     const airFuelTRY = i.airportDriveKm * i.cons / 100 * i.fuelTRY;
     const fly = [
       [`${i.people} tickets NAV/ASR to IST`, i.ticketINR * i.people],
       ["Excess bags (if allowances aren't pooled)", i.bagFeeINR],
       [`Fuel to the airport (${i.airportDriveKm} km)`, airFuelTRY * FX.TRY],
-      ["IST to apartment minivan", i.transferINR],
-      ["1-day Istanbul rental for Sapanca", i.istRentalDayINR]
+      ["IST to apartment minivan", i.transferINR]
     ];
     const tot = a => a.reduce((s, [, v]) => s + v, 0);
-    return { drive, fly, d: tot(drive), f: tot(fly), dayOnly: drive.slice(0, 3).reduce((s, [, v]) => s + v, 0) };
+    return { drive, fly, d: tot(drive), f: tot(fly), dayOnly: tot(drive) };
   }
   function vDvf() {
     const c = dvfCalc(), i = state.dvf; const diff = c.f - c.d;
@@ -878,8 +875,8 @@
         <details class="dvf-inputs"><summary>Tweak the inputs</summary>
           <div class="form-grid">
             ${input("km", "Drive distance (km)", 10)}${input("cons", "Car L/100 km", 0.1)}${input("fuelTRY", "Fuel ₺/L", 0.5)}${input("rentalDayINR", "Rental per day (₹)")}
-            ${input("tollsTRY", "Tolls (₺)", 10)}${input("idleExtraINR", "Idle day + parking (₹)")}${input("ticketINR", "Ticket per person (₹)")}${input("people", "People", 1)}
-            ${input("bagFeeINR", "Excess bags (₹)")}${input("airportDriveKm", "Hotel to airport (km)", 5)}${input("transferINR", "IST minivan (₹)")}${input("istRentalDayINR", "Istanbul 1-day rental (₹)")}
+            ${input("tollsTRY", "Tolls (₺)", 10)}${input("ticketINR", "Ticket per person (₹)")}${input("people", "People", 1)}
+            ${input("bagFeeINR", "Excess bags (₹)")}${input("airportDriveKm", "Hotel to airport (km)", 5)}${input("transferINR", "IST minivan (₹)")}
           </div>
           <ul class="bullets small">${Object.values(DRIVE_VS_FLY.notes).map(n => `<li>${esc(n)}</li>`).join("")}</ul>
           <button class="btn sm" data-act="reset-dvf">Reset inputs</button>
@@ -918,11 +915,11 @@
     const fillCls = c.fill <= 85 ? "good" : c.fill <= 100 ? "mid" : "bad";
     const fillTxt = c.fill <= 85 ? "Fits with room to spare" : c.fill <= 100 ? "Tight. Soft bags help." : "Won't fit. Size up the car or store more.";
     const wardCls = c.wardrobe >= 75 ? "good" : c.wardrobe >= 50 ? "mid" : "bad";
-    const wardTxt = c.wardrobe >= 75 ? "Comfortable for warm Antalya + cold Cappadocia" : c.wardrobe >= 50 ? "Tight. Plan a laundry stop." : "Very tight for 6 nights with winter layers";
+    const wardTxt = c.wardrobe >= 75 ? "Comfortable for warm Antalya + cold Cappadocia" : c.wardrobe >= 50 ? "Tight. Plan a laundry stop." : "Very tight for 7 nights with winter layers";
     return `
       <section class="panel luggage reveal" id="luggage">
         <div class="panel-h"><h2>Luggage planner 🧳</h2><span class="muted">Your real bags, your call</span></div>
-        <p class="lede small">You've got 2 large, 3 small and 2 backpacks. Set what you own and what (if anything) you'd leave at IST for the first 6 nights. Everything below recalculates, and storage cost flows into the budget.</p>
+        <p class="lede small">You've got 2 large, 3 small and 2 backpacks. Set what you own and what (if anything) you'd leave at IST for the first 7 nights. Everything below recalculates, and storage cost flows into the budget.</p>
         <div class="presets">${M.presets.map((p, i) => `<button class="chip ${JSON.stringify(p.store) === JSON.stringify(L.store) ? "on" : ""}" data-preset="${i}">${esc(p.name)}</button>`).join("")}</div>
         <div class="lug-grid">
           <div class="lug-table">
@@ -938,7 +935,7 @@
           <div class="lug-out">
             <div class="lo ${fillCls}"><small>Car boot</small><b>${Math.round(c.fill)}% full</b><div class="mini-bar"><i style="width:${Math.min(100, c.fill)}%"></i></div><span>${fillTxt}. ${Math.round(c.bootL)} L of bags vs about ${Math.round(c.usable)} L usable. Backpacks ride at your feet.</span></div>
             <div class="lo ${c.excessKg > 0 ? "mid" : "good"}"><small>IST to AYT flight</small><b>${c.checkedKg} kg checked</b><span>Allowance ${c.allowance} kg (${c.fare.kg} kg × 4, if pooled). ${c.excessKg > 0 ? `About ${c.excessKg} kg over, roughly ${tl(c.excessTRY)} (${inr(c.excessTRY * FX.TRY)}).` : "Within allowance."} ${c.heavyBag ? "A large bag is heavier than one person's allowance, so book all 4 on one booking and ask TK to pool (Needs confirmation), or pick ExtraFly." : ""} ${!c.cabinOk ? "Too many cabin bags: max 1 each." : ""}${!c.personalOk ? " Too many personal items." : ""}</span></div>
-            <div class="lo ${wardCls}"><small>Wardrobe space, first 6 nights</small><b>${Math.round(c.wardrobe)} L / person</b><span>${wardTxt} ${statusBadge("Estimated")}</span></div>
+            <div class="lo ${wardCls}"><small>Wardrobe space, first 7 nights</small><b>${Math.round(c.wardrobe)} L / person</b><span>${wardTxt} ${statusBadge("Estimated")}</span></div>
             <div class="lo ${c.storeTRY ? "mid" : "good"}"><small>Storage at IST</small><b>${c.storeTRY ? tl(c.storeTRY) : "₹0"}</b><span>${c.storeTRY ? `≈ ${inr(c.storeTRY * FX.TRY)} for ${L.days} days. Added to the budget automatically. The staffed desk is in arrivals, opposite Exit 13.` : "Nothing stored. No airport detour on the way back."}</span></div>
             <div class="lo ${c.bigUp > 2 ? "mid" : "good"}"><small>Cave-hotel stairs</small><b>${c.bigUp} big ${c.bigUp === 1 ? "bag" : "bags"}</b><span>Ask the hotel for porter help. Göreme lanes are steep.</span></div>
             <div class="lo"><small>Flying home</small><b>${c.homePieces} pieces</b><span>Confirm IndiGo's per-passenger allowance. Book a minivan to IST (a normal taxi won't fit this).</span></div>
@@ -948,7 +945,7 @@
   }
 
   function vLogistics() {
-    const cities = [["Antalya", "antalya", "2026-11-05"], ["Cappadocia", "goreme", "2026-11-08"], ["Istanbul", "istanbul", "2026-11-12"]];
+    const cities = [["Antalya", "antalya", "2026-11-05"], ["Cappadocia", "goreme", "2026-11-09"], ["Istanbul", "istanbul", "2026-11-12"]];
     return `
       <section class="page-head"><h1>Bags, wheels &amp; wings.</h1><p class="lede">Drive vs fly, the luggage planner, road legs, weather and bookings.</p></section>
       ${vDvf()}

@@ -33,7 +33,7 @@ The **journey bar** under the header is on every tab: it's colour-coded by city,
 ## Your questions, answered in the app
 
 - **Booster seat:** yes, it's mandatory. Turkish traffic regulation Art. 150 requires a child seat for children under 150 cm and under 36 kg in cars. The adult belt is only allowed over 135 cm, and only in the back. Riding on a lap or lying across the seat is not allowed. The fine is ₺1,246 per violation under KTK 78/1-a, and some 2026 sources say ₺2,500-5,000. The Intel Corner has comfort tips for a booster-hating 5-year-old.
-- **Cappadocia to Istanbul:** the drive day itself costs about ₹15k (rental, fuel, tolls). Flying costs about ₹30k for 4. Counted like-for-like (the idle car day, and a 1-day rental for Sapanca), flying is about ₹12k more. It saves about 4-5 h and about 9 h of booster time, so we'd fly. Every input is editable.
+- **Cappadocia to Istanbul:** the drive day itself costs about ₹15k (rental, fuel, tolls). Flying costs about ₹30k for 4. Neither plan needs a car in Istanbul itself, so it's a clean like-for-like comparison. Flying saves about 4-5 h and about 9 h of booster time, so we'd fly. Every input is editable.
 - **Luggage:** reworked. Carrying all 7 pieces (2 large, 3 small, 2 backpacks) fits a C-sedan boot (about 78% full) and gives about 86 L of clothes space per person. Storing one large bag drops that to about 61 L, which is tight for cold Cappadocia. The planner lets you try any mix and pushes the storage cost into the budget.
 - **Weather:** Turkey stays on UTC+3 all year, so November sunsets are about 17:30-17:55. Every timing in the plan now uses the real sunrise and sunset.
 
